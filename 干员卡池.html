@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.0">
+<meta name="version" content="v1.1">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -355,6 +355,24 @@
     font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--ink-2);
   }
 
+  /* ---------- 表3 · 本局不可用（暖红淡化，与可用表区分） ---------- */
+  .banned-panel{border-color:#eedcdc}
+  .banned-panel .title{color:#9b4a4a}
+  .banned-panel .title small{color:#b58a8a}
+  .banned-panel .legend{color:#b58a8a}
+  table.grid.banned thead th{
+    background:#fdf1f1;color:#9b4a4a;border-bottom-color:#eccdcd;
+  }
+  table.grid.banned tbody td{background:#fffafa}
+  table.grid.banned tbody tr:hover td{background:#fdeeee}
+  table.grid.banned .op-name{color:#8b9099;font-weight:600}
+  table.grid.banned .is-stacked .op-name{color:#9c7d7d;font-weight:800}
+  table.grid.banned .star{color:#d9a5a5}
+  table.grid.banned .op:hover{background:#fbe3e3;color:#8a3b3b}
+  table.grid.banned .tier{background:#f2efef;color:#8b9099}
+  table.grid.banned .reason{color:#9b5a5a;font-size:12.5px;line-height:1.6}
+  .empty-note{margin:0;padding:22px 4px;color:var(--muted);font-size:13px;text-align:center}
+
   @media print{
     .topbar,.action-row,#panelBan,.modal{display:none !important}
     body{background:#fff}
@@ -370,7 +388,7 @@
 <header class="topbar">
   <div class="brand">
     <h1>卫戍协议 · 干员卡池筛选</h1>
-    <p>禁 5 主盟约 + 4 副盟约 → 生成可用干员三张表</p>
+    <p>禁 5 主盟约 + 4 副盟约 → 生成可用与不可用干员四张表</p>
   </div>
   <div class="topbar-actions">
     <span class="pill" id="banSummary">主 0/5 · 副 0/4</span>
@@ -422,12 +440,20 @@
       <div class="table-wrap" id="tbl2"></div>
     </article>
 
-    <article class="panel" style="margin-top:16px">
+    <article class="panel banned-panel" style="margin-top:16px">
       <div class="table-head">
-        <h2 class="title">表3 · 特质详情<small>仅列当前可用干员；点击干员名可查看详情</small></h2>
-        <div class="legend"><span class="k"><b>★</b> ＝ 持续叠加</span></div>
+        <h2 class="title">表3 · 本局不可用干员<small id="bannedCount">已被禁出卡池，本局不必考虑</small></h2>
+        <div class="legend"><span class="k">暖红配色 ＝ 与上方可用表区分</span></div>
       </div>
       <div class="table-wrap" id="tbl3"></div>
+    </article>
+
+    <article class="panel" style="margin-top:16px">
+      <div class="table-head">
+        <h2 class="title">表4 · 特质详情<small>仅列当前可用干员；点击干员名可查看详情</small></h2>
+        <div class="legend"><span class="k"><b>★</b> ＝ 持续叠加</span></div>
+      </div>
+      <div class="table-wrap" id="tbl4"></div>
     </article>
   </section>
 </main>
@@ -449,7 +475,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.0</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.1</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -470,11 +496,12 @@
       </section>
 
       <section class="help-sec">
-        <h4>三张表分别是什么</h4>
+        <h4>四张表分别是什么</h4>
         <ul>
           <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约，外加一列 <b>无主盟约</b>（对应没有核心盟约的干员）；纵轴是 Ⅰ~Ⅵ 阶。</li>
           <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 11 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
-          <li><b>表3 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。</li>
+          <li><b>表3 · 本局不可用干员</b>：列出已经被禁出卡池的干员，以及他被废掉的原因（<b>主盟约全禁</b> ／ <b>副盟约全禁</b>）。这张表用<b>暖红配色</b>，与上面两张可用表的蓝白配色区分开，提醒你这些不用考虑。</li>
+          <li><b>表4 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。</li>
         </ul>
       </section>
 
@@ -501,12 +528,12 @@
           <li>两个维度<b>都通过</b>，这名干员才算可用。</li>
         </ul>
         <p class="help-note">所以带多个盟约的干员会在多列重复出现，这是规则本身导致的，不是重复计算。</p>
-        <p class="help-note">另外，表2 没有「无副盟约」这一列，因此没有副盟约的干员只会出现在表1 和表3。</p>
+        <p class="help-note">另外，表2 没有「无副盟约」这一列，因此没有副盟约的干员只会出现在表1 和表4（表格里同样能查到他们）。</p>
       </section>
 
       <section class="help-sec">
         <h4>怎么查某个干员的特质</h4>
-        <p>在表1、表2、表3 里<b>直接点干员名</b>，会弹出该干员的盟约、特质类型、特质（基础 / 精锐）与原型干员。按 <span class="help-kbd">Esc</span>、点空白处或右上角 <b>×</b> 都能关闭。</p>
+        <p>在任意一张表里<b>直接点干员名</b>（表3 的不可用干员同样可以点），会弹出该干员的盟约、特质类型、特质（基础 / 精锐）与原型干员。按 <span class="help-kbd">Esc</span>、点空白处或右上角 <b>×</b> 都能关闭。</p>
       </section>
 
       <section class="help-sec">
@@ -516,7 +543,7 @@
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -610,6 +637,28 @@
     return coreOk && addOk;
   }
   function availableOps() { return OPS.filter(isAvailable); }
+
+  /* 该干员被禁出卡池的原因；返回 null 表示本局可用 */
+  function banReason(op) {
+    var coreFail = op.core.length > 0 && op.core.every(function (c) {
+      return state.bannedCore.indexOf(c) >= 0;
+    });
+    var addFail = op.add.length > 0 && op.add.every(function (a) {
+      return state.bannedSub.indexOf(a) >= 0;
+    });
+    if (!coreFail && !addFail) return null;
+    var parts = [];
+    if (coreFail) parts.push("主盟约全禁（" + op.core.join("、") + "）");
+    if (addFail) parts.push("副盟约全禁（" + op.add.join("、") + "）");
+    return parts.join("；");
+  }
+  function bannedOps() {
+    var out = [];
+    for (var i = 0; i < OPS.length; i++) {
+      if (!isAvailable(OPS[i])) out.push(OPS[i]);
+    }
+    return out;
+  }
 
   /* 该干员除「本列盟约」外的其余全部盟约 */
   function othersOf(op, colKey) {
@@ -742,7 +791,8 @@
     renderOverview(avail);
     renderTable1(avail);
     renderTable2(avail);
-    renderTable3(avail);
+    renderBannedTable(bannedOps());
+    renderTable4(avail);
   }
 
   function renderOverview(avail) {
@@ -873,7 +923,8 @@
     }));
   }
 
-  function renderTable3(avail) {
+  /* 表4 · 特质详情（仅可用干员） */
+  function renderTable4(avail) {
     var rows = avail.slice().sort(function (a, b) {
       return (a.tier - b.tier) || (ORDER[a.name] - ORDER[b.name]);
     });
@@ -919,8 +970,59 @@
     });
     table.appendChild(tbody);
 
+    var host = $("tbl4");
+    host.textContent = "";
+    host.appendChild(table);
+  }
+
+  /* 表3 · 本局不可用干员（暖红配色，与可用表区分） */
+  function renderBannedTable(rows) {
     var host = $("tbl3");
     host.textContent = "";
+
+    var sorted = rows.slice().sort(function (a, b) {
+      return (a.tier - b.tier) || (ORDER[a.name] - ORDER[b.name]);
+    });
+
+    var meta = $("bannedCount");
+    if (meta) {
+      meta.textContent = sorted.length
+        ? "已被禁出卡池，共 " + sorted.length + " 名，本局不必考虑"
+        : "本局没有出不了的干员";
+    }
+
+    if (!sorted.length) {
+      host.appendChild(el("p", "empty-note", "本局没有出不了的干员。"));
+      return;
+    }
+
+    var table = el("table", "grid banned");
+    var thead = el("thead");
+    var hr = el("tr");
+    ["干员", "阶数", "被禁原因"].forEach(function (h) { hr.appendChild(el("th", "", h)); });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    var tbody = el("tbody");
+    sorted.forEach(function (op) {
+      var tr = el("tr");
+
+      var nameCell = el("td", "name");
+      var wrap = el("span", "op" + (op.type === "持续叠加" ? " is-stacked" : ""));
+      wrap.appendChild(el("span", "op-name", op.name));
+      if (op.type === "持续叠加") wrap.appendChild(el("span", "star", "★"));
+      nameCell.appendChild(wrap);
+      nameCell.title = "点击查看详情";
+      nameCell.addEventListener("click", function () { openModal(op.name); });
+      tr.appendChild(nameCell);
+
+      tr.appendChild(el("td", "tier t" + op.tier, tierLabel(op.tier)));
+
+      tr.appendChild(el("td", "reason", banReason(op) || "—"));
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
     host.appendChild(table);
   }
 
@@ -1027,7 +1129,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.0";
+  var APP_VER = "v1.1";
   var APP_AUTHOR = "铲铲铲铲哥";
 
   /* 数据版本信息：填入说明与页脚 */
