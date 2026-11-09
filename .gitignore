@@ -6,6 +6,9 @@ _tmp/
 __pycache__/
 *.pyc
 
+# 分发打包产物（由 tools/package.py 生成，不入库）
+dist/
+
 # 系统杂项
 Thumbs.db
 desktop.ini
