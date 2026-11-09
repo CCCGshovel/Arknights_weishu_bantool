@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
+<meta name="author" content="铲铲铲铲哥">
+<meta name="version" content="v1.0">
+<meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
     --bg:#f3f4f7;
@@ -332,6 +335,11 @@
     background:#fff;border-top:1px solid var(--line);
   }
   .help-tip{font-size:12px;color:var(--muted)}
+  .ver-chip{
+    display:inline-block;padding:1px 8px;border-radius:999px;
+    background:var(--accent-weak);color:#22498f;
+    font-size:11.5px;font-weight:800;letter-spacing:.02em;
+  }
   .help-kbd{
     display:inline-block;padding:0 5px;border-radius:4px;
     background:#eef0f5;border:1px solid var(--line-strong);
@@ -432,7 +440,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.0</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -498,6 +506,7 @@
           <li>当前选择会<b>自动记住</b>，关掉页面重开还在；点右上角 <b>重置</b> 可清空。</li>
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据。</li>
+          <li>工具版本 <b id="verMeta">v1.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -1007,6 +1016,10 @@
     if (helpLastFocus && helpLastFocus.focus) helpLastFocus.focus();
   }
 
+  /* 工具版本与作者（单处维护，改这里即可） */
+  var APP_VER = "v1.0";
+  var APP_AUTHOR = "铲铲铲铲哥";
+
   /* 数据版本信息：填入说明与页脚 */
   function fillMeta() {
     var txt = (D.count || OPS.length) + " 名干员";
@@ -1014,7 +1027,11 @@
     var a = $("dataMeta");
     if (a) a.textContent = txt;
     var f = $("footMeta");
-    if (f) f.textContent = "数据版本：" + txt + "。";
+    if (f) f.textContent = "数据版本：" + txt + " ｜ " + APP_VER + " ｜ 作者 " + APP_AUTHOR + "。";
+    var v = $("verMeta");
+    if (v) v.textContent = APP_VER;
+    var c = $("verChip");
+    if (c) c.textContent = APP_VER;
   }
 
   /* ========== 事件绑定 ========== */
