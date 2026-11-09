@@ -1,0 +1,12 @@
+# Excel 锁文件
+~$*
+
+# 临时脚本与中间产物
+_tmp/
+__pycache__/
+*.pyc
+
+# 系统杂项
+Thumbs.db
+desktop.ini
+.DS_Store
