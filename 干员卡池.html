@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.4.0">
+<meta name="version" content="v1.4.2">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -541,7 +541,7 @@
 </main>
 
 <p class="footer-note">
-  数据来源：<a href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，整理为 卫戍协议_干员数据库.csv 与 卫戍协议_盟约交叉表.xlsx「按阶明细」。<span id="footMeta"></span>可用性判定：无主盟约视为通过，否则任一主盟约未被禁即通过；副盟约同理，两维度取 AND。
+  数据来源：<a href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，整理为 卫戍协议_干员数据库.csv 与 卫戍协议_盟约交叉表.xlsx「按阶明细」。<span id="footMeta"></span>可用性判定：先看主盟约——主盟约被全禁就直接出不了；主盟约过关（或本来没有主盟约）再看副盟约，副盟约被全禁才出不了。
 </p>
 
 <div class="modal" id="modal" hidden>
@@ -557,7 +557,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.4.0</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.4.2</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -606,13 +606,13 @@
 
       <section class="help-sec">
         <h4>为什么同一名干员会出现在好几列</h4>
-        <p>判定规则是「<b>认一个就算能出</b>」：</p>
+        <p>判定顺序是「<b>先主盟约，再副盟约</b>」：</p>
         <ul>
-          <li><b>主盟约维度</b>：若这名干员没有主盟约，视为通过；否则只要它有<b>任意一个</b>主盟约没被禁，就算通过。</li>
-          <li><b>副盟约维度</b>：规则同上。</li>
-          <li>两个维度<b>都通过</b>，这名干员才算可用。</li>
+          <li><b>第一步 · 主盟约</b>：没有主盟约的干员，直接进第二步；有主盟约的，只要<b>任意一个</b>没被禁就能出卡，<b>此时不再看副盟约</b>。主盟约被<b>全禁</b>的，直接出不了，副盟约再干净也没用。</li>
+          <li><b>第二步 · 副盟约</b>：只有「没有主盟约」的干员才走到这一步，副盟约<b>全被禁</b>才出不了。</li>
         </ul>
-        <p class="help-note">所以带多个盟约的干员会在多列重复出现，这是规则本身导致的，不是重复计算。</p>
+        <p class="help-note">所以带多个主盟约的干员会在多列重复出现，这是规则本身导致的，不是重复计算。</p>
+        <p class="help-note">主盟约没被禁、但副盟约全被禁的干员<b>依然能出</b>，会正常出现在表1 或表2 里，不会进表3 / 表4。</p>
         <p class="help-note">两张网格都只按「有的盟约」分列，所以：没有副盟约的干员在表2 里查不到（去表1 按主盟约找）；没有主盟约的干员在表1 里查不到（去表2 按副盟约找）。表5 是完整名单，两边都能兜底。</p>
       </section>
 
@@ -629,7 +629,7 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.4.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.4.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -710,28 +710,21 @@
   }
 
   /* ========== 可用性判定 ========== */
-  // OR 逻辑：该维度若为空则通过，否则任一盟约未被禁即通过（维度间取 AND）
+  // 主盟约优先：主盟约全被禁 → 直接出不了，副盟约再好也没用；
+  // 主盟约过关（含「本来就没有主盟约」）时再看副盟约：副盟约全被禁才出不了。
   function isAvailable(op) {
-    var coreOk = op.core.length === 0 || op.core.some(function (c) {
-      return state.bannedCore.indexOf(c) < 0;
-    });
-    var addOk = op.add.length === 0 || op.add.some(function (a) {
+    if (op.core.length > 0) {
+      return op.core.some(function (c) {
+        return state.bannedCore.indexOf(c) < 0;
+      });
+    }
+    if (op.add.length === 0) return true;
+    return op.add.some(function (a) {
       return state.bannedSub.indexOf(a) < 0;
     });
-    return coreOk && addOk;
   }
   function availableOps() { return OPS.filter(isAvailable); }
 
-  /* 该干员被禁出卡池的原因；返回 null 表示本局可用 */
-  function banReason(op) {
-    var coreFail = coreAllBanned(op);
-    var addFail = subAllBanned(op);
-    if (!coreFail && !addFail) return null;
-    var parts = [];
-    if (coreFail) parts.push("主盟约全禁（" + op.core.join("、") + "）");
-    if (addFail) parts.push("副盟约全禁（" + op.add.join("、") + "）");
-    return parts.join("；");
-  }
   function bannedOps() {
     var out = [];
     for (var i = 0; i < OPS.length; i++) {
@@ -1095,8 +1088,9 @@
 
     if (meta) {
       var what = kind === "core" ? "主盟约" : "副盟约";
+      var tail = kind === "core" ? "，共 " : "、且确实出不了卡池，共 ";
       meta.textContent = dead.length
-        ? "本局" + what + "被全禁，共 " + dead.length + " 名干员出不了卡池"
+        ? "本局" + what + "被全禁" + tail + dead.length + " 名干员出不了卡池"
         : "本局没有因" + what + "被全禁而出不了的干员";
     }
 
@@ -1225,7 +1219,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.4.0";
+  var APP_VER = "v1.4.2";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
