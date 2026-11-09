@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import csv
+import datetime
 import json
 import sys
 from pathlib import Path
@@ -139,6 +140,8 @@ def main() -> int:
         return 1
 
     payload = {
+        "built": datetime.date.today().isoformat(),
+        "count": len(records),
         "tiers": [TIER_ROMAN[i] for i in range(1, 7)],
         "core": CORE,
         "subAll": SUB_ALL,
