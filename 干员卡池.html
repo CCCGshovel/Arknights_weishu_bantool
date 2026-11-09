@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.2.1">
+<meta name="version" content="v1.2.2">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -231,12 +231,6 @@
   table.grid.warm .op-other{color:#a08c8c}
   table.grid.warm .star{color:#c98a8a}
   table.grid.warm .empty{color:#c2b0b0}
-
-  th.colhead.special{background:#f4f1fa;color:#5b4a86}
-  /* 「无主盟约」列不再覆盖行底色，改用左侧细竖条做区分 */
-  table.grid tbody td.cell-none{
-    background-image:linear-gradient(90deg,rgba(91,74,134,.16) 0 3px,transparent 3px);
-  }
 
   .empty{color:#c3c9d6}
 
@@ -560,7 +554,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2.1</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2.2</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -583,7 +577,7 @@
       <section class="help-sec">
         <h4>五张表分别是什么</h4>
         <ul>
-          <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约，外加一列 <b>无主盟约</b>（对应没有核心盟约的干员）；纵轴是 Ⅰ~Ⅵ 阶。</li>
+          <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约；纵轴是 Ⅰ~Ⅵ 阶。没有主盟约的干员不在这里列出，他们在表2 里按副盟约能查到。</li>
           <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 11 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
           <li><b>表3 · 不可用 · 被禁主盟约 × 阶数</b>：横轴换成<b>本局被禁的 5 个主盟约</b>，只放「主盟约被全禁、因此出不了」的干员。落在哪一列，就是他被废掉的原因。</li>
           <li><b>表4 · 不可用 · 被禁副盟约 × 阶数</b>：横轴是本局被禁的 4 个副盟约，只放「副盟约被全禁、因此出不了」的干员。</li>
@@ -616,7 +610,7 @@
           <li>两个维度<b>都通过</b>，这名干员才算可用。</li>
         </ul>
         <p class="help-note">所以带多个盟约的干员会在多列重复出现，这是规则本身导致的，不是重复计算。</p>
-        <p class="help-note">另外，表2 没有「无副盟约」这一列，所以没有副盟约的干员在表2 里查不到——请到表1（按主盟约）、表3（若被禁）或表5（若可用）里找他们。</p>
+        <p class="help-note">两张网格都只按「有的盟约」分列，所以：没有副盟约的干员在表2 里查不到（去表1 按主盟约找）；没有主盟约的干员在表1 里查不到（去表2 按副盟约找）。表5 是完整名单，两边都能兜底。</p>
       </section>
 
       <section class="help-sec">
@@ -631,7 +625,7 @@
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.2.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.2.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -666,8 +660,6 @@
   var CORE_LIMIT = 5;
   var SUB_LIMIT  = 4;
   var LS_KEY     = "ws-ganka-pool-v1";
-  var NONE_KEY   = "__none__";
-  var NONE_LABEL = "无主盟约";
 
   var BY_NAME = Object.create(null);
   var ORDER   = Object.create(null);
@@ -955,9 +947,7 @@
     var hr = el("tr");
     hr.appendChild(el("th", "corner", "阶数"));
     columns.forEach(function (col) {
-      var th = el("th", "colhead" + (col.special ? " special" : ""), col.label);
-      if (col.special) th.title = "没有核心盟约的干员";
-      hr.appendChild(th);
+      hr.appendChild(el("th", "colhead", col.label));
     });
     thead.appendChild(hr);
     table.appendChild(thead);
@@ -969,7 +959,7 @@
       tr.appendChild(rh);
 
       columns.forEach(function (col) {
-        var td = el("td", col.special ? "cell-none" : "");
+        var td = el("td", "");
         var list = getOps(t, col);
         if (!list.length) {
           td.appendChild(el("span", "empty", "—"));
@@ -993,14 +983,13 @@
     var columns = CORE
       .filter(function (c) { return state.bannedCore.indexOf(c) < 0; })
       .map(function (c) { return { key: c, label: c }; });
-    columns.push({ key: NONE_KEY, label: NONE_LABEL, special: true });
 
     var host = $("tbl1");
     host.textContent = "";
     host.appendChild(makeGrid(columns, function (t, col) {
       return avail.filter(function (op) {
         if (op.tier !== t) return false;
-        return col.key === NONE_KEY ? op.core.length === 0 : op.core.indexOf(col.key) >= 0;
+        return op.core.indexOf(col.key) >= 0;
       });
     }));
   }
@@ -1232,7 +1221,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.2.1";
+  var APP_VER = "v1.2.2";
   var APP_AUTHOR = "铲铲铲铲哥";
 
   /* 数据版本信息：填入说明与页脚 */
