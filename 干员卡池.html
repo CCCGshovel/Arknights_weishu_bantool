@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.2.3">
+<meta name="version" content="v1.3.0">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -446,11 +446,11 @@
 <header class="topbar">
   <div class="brand">
     <h1>卫戍协议 · 干员卡池筛选</h1>
-    <p>禁 5 主盟约 + 4 副盟约 → 生成可用与不可用干员五张表</p>
+    <p>禁 5 主盟约 + 5 副盟约 → 生成可用与不可用干员五张表</p>
     <p class="game-ver">对应本体 <b id="gameVer">2026.11.8</b> 更新的《卫戍协议：规程》</p>
   </div>
   <div class="topbar-actions">
-    <span class="pill" id="banSummary">主 0/5 · 副 0/4</span>
+    <span class="pill" id="banSummary">主 0/5 · 副 0/5</span>
     <button class="btn ghost" id="btnHelp" type="button">说明</button>
     <button class="btn ghost" id="btnReset" type="button">重置</button>
   </div>
@@ -468,8 +468,8 @@
       </div>
       <div class="group">
         <div class="group-head">
-          <h2>副盟约 <span class="req">禁用 4 个</span></h2>
-          <span class="counter" id="subCount">0 / 4</span>
+          <h2>副盟约 <span class="req">禁用 5 个</span></h2>
+          <span class="counter" id="subCount">0 / 5</span>
         </div>
         <div class="chips" id="subChips"></div>
         <p class="note">投资人 / 协防干员 / 调和 不可禁用，恒可出。绝技不参与本表。</p>
@@ -477,7 +477,7 @@
     </div>
     <div class="action-row">
       <button class="btn primary" id="btnBuild" type="button" disabled>生成表格</button>
-      <p class="hint" id="hint">请先选满 5 个主盟约与 4 个副盟约。</p>
+      <p class="hint" id="hint">请先选满 5 个主盟约与 5 个副盟约。</p>
     </div>
   </section>
 
@@ -557,7 +557,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2.3</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.3.0</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -570,7 +570,7 @@
       <section class="help-sec">
         <h4>选择本局禁用的词条</h4>
         <ul>
-          <li>在 <b>主盟约</b> 里选满 <b>5</b> 个、<b>副盟约</b> 里选满 <b>4</b> 个被禁用的词条。点一下即标记为禁用（变红并带 ✕），再点一下取消。</li>
+          <li>在 <b>主盟约</b> 里选满 <b>5</b> 个、<b>副盟约</b> 里选满 <b>5</b> 个被禁用的词条。点一下即标记为禁用（变红并带 ✕），再点一下取消。</li>
           <li>某一栏选满后，该栏其余词条会变灰，再点会提示你换一个。</li>
           <li>两栏都选满后，<b>生成表格</b> 按钮才会亮起。</li>
           <li><b>投资人 / 协防干员 / 调和</b> 不可禁用，恒可出；<b>绝技</b> 是纯局内效果，不参与本表。</li>
@@ -581,9 +581,9 @@
         <h4>五张表分别是什么</h4>
         <ul>
           <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约；纵轴是 Ⅰ~Ⅵ 阶。没有主盟约的干员不在这里列出，他们在表2 里按副盟约能查到。</li>
-          <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 11 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
+          <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 10 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
           <li><b>表3 · 不可用 · 被禁主盟约 × 阶数</b>：横轴换成<b>本局被禁的 5 个主盟约</b>，只放「主盟约被全禁、因此出不了」的干员。落在哪一列，就是他被废掉的原因。</li>
-          <li><b>表4 · 不可用 · 被禁副盟约 × 阶数</b>：横轴是本局被禁的 4 个副盟约，只放「副盟约被全禁、因此出不了」的干员。</li>
+          <li><b>表4 · 不可用 · 被禁副盟约 × 阶数</b>：横轴是本局被禁的 5 个副盟约，只放「副盟约被全禁、因此出不了」的干员。</li>
           <li><b>表5 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。<b>默认折叠</b>，点标题栏展开。</li>
         </ul>
         <p class="help-note">表1、表2 的行底色是<b>阶数颜色</b>（Ⅰ 浅灰 → Ⅵ 杏橙，与交叉表同一套）；表3、表4 用同阶色<b>降饱和的暖调版</b>，一眼就能看出「这些卡出不了」。同一位干员如果主、副盟约都被全禁，会同时出现在表3 和表4。</p>
@@ -625,11 +625,11 @@
         <h4>其它</h4>
         <ul>
           <li>当前选择会<b>自动记住</b>，关掉页面重开还在；点右上角 <b>重置</b> 可清空。</li>
-          <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
+          <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+5，表格会先收起，重新选满即可。</li>
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.2.3</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.3.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -662,7 +662,7 @@
   var SUB_FREE = D.subFree || [];
 
   var CORE_LIMIT = 5;
-  var SUB_LIMIT  = 4;
+  var SUB_LIMIT  = 5;
   var LS_KEY     = "ws-ganka-pool-v1";
 
   var BY_NAME = Object.create(null);
@@ -1225,7 +1225,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.2.3";
+  var APP_VER = "v1.3.0";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
