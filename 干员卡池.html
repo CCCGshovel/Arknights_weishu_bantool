@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.1">
+<meta name="version" content="v1.2">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -29,6 +29,34 @@
     --t4:#8e44c8;
     --t5:#c9911b;
     --t6:#cf3f3f;
+
+    /* 阶数底色：取自 卫戍协议_盟约交叉表.xlsx「交叉表」的 6 阶图例 */
+    --tier1:#F0F0F0;
+    --tier2:#DCE6EE;
+    --tier3:#D6F0EA;
+    --tier4:#D8ECFA;
+    --tier5:#FDEECB;
+    --tier6:#FCE0CC;
+    --tier1-deep:#D8D8D8;
+    --tier2-deep:#C6CFD6;
+    --tier3-deep:#C1D8D3;
+    --tier4-deep:#C2D4E1;
+    --tier5-deep:#E4D6B7;
+    --tier6-deep:#E3CAB8;
+
+    /* 表3/表4 的阶数底色：同阶色混入暖调、降饱和压暗 */
+    --warm1:#E4DFDF;
+    --warm2:#D2D6DD;
+    --warm3:#CDDFDA;
+    --warm4:#CEDBE8;
+    --warm5:#F0DDBE;
+    --warm6:#EFD1BF;
+    --warm1-deep:#C8B6B6;
+    --warm2-deep:#B5B2BB;
+    --warm3-deep:#AFBDB7;
+    --warm4-deep:#ADB6C7;
+    --warm5-deep:#DBBB92;
+    --warm6-deep:#DAAA93;
 
     --radius:10px;
     --shadow:0 1px 2px rgba(20,26,40,.05), 0 6px 18px rgba(20,26,40,.05);
@@ -174,12 +202,41 @@
   table.grid tbody th.t1{color:var(--t1)} table.grid tbody th.t2{color:var(--t2)}
   table.grid tbody th.t3{color:var(--t3)} table.grid tbody th.t4{color:var(--t4)}
   table.grid tbody th.t5{color:var(--t5)} table.grid tbody th.t6{color:var(--t6)}
-  table.grid tbody tr:hover td{background:#fcfdff}
+  /* hover 不再覆盖底色，只叠一层半透明蒙版，保住阶数配色 */
+  table.grid tbody tr:hover td{box-shadow:inset 0 0 0 999px rgba(47,111,237,.07)}
+  table.grid.warm tbody tr:hover td{box-shadow:inset 0 0 0 999px rgba(150,60,60,.06)}
   table.grid tbody tr:last-child td,table.grid tbody tr:last-child th{border-bottom:none}
   table.grid th:last-child,table.grid td:last-child{border-right:none}
 
+  /* 表1/表2：按阶数铺底色（取自交叉表 6 色） */
+  table.grid td{background:var(--panel)}
+  table.grid tbody tr.t1 td{background:var(--tier1)} table.grid tbody tr.t2 td{background:var(--tier2)}
+  table.grid tbody tr.t3 td{background:var(--tier3)} table.grid tbody tr.t4 td{background:var(--tier4)}
+  table.grid tbody tr.t5 td{background:var(--tier5)} table.grid tbody tr.t6 td{background:var(--tier6)}
+  table.grid tbody tr.t1 th{background:var(--tier1-deep)} table.grid tbody tr.t2 th{background:var(--tier2-deep)}
+  table.grid tbody tr.t3 th{background:var(--tier3-deep)} table.grid tbody tr.t4 th{background:var(--tier4-deep)}
+  table.grid tbody tr.t5 th{background:var(--tier5-deep)} table.grid tbody tr.t6 th{background:var(--tier6-deep)}
+
+  /* 表3/表4：同阶色暖调降饱和版 */
+  table.grid.warm td{background:var(--panel)}
+  table.grid.warm tbody tr.t1 td{background:var(--warm1)} table.grid.warm tbody tr.t2 td{background:var(--warm2)}
+  table.grid.warm tbody tr.t3 td{background:var(--warm3)} table.grid.warm tbody tr.t4 td{background:var(--warm4)}
+  table.grid.warm tbody tr.t5 td{background:var(--warm5)} table.grid.warm tbody tr.t6 td{background:var(--warm6)}
+  table.grid.warm tbody tr.t1 th{background:var(--warm1-deep)} table.grid.warm tbody tr.t2 th{background:var(--warm2-deep)}
+  table.grid.warm tbody tr.t3 th{background:var(--warm3-deep)} table.grid.warm tbody tr.t4 th{background:var(--warm4-deep)}
+  table.grid.warm tbody tr.t5 th{background:var(--warm5-deep)} table.grid.warm tbody tr.t6 th{background:var(--warm6-deep)}
+  table.grid.warm tbody th{color:#8a5a5a}
+  table.grid.warm .op-name{color:#6f5f5f}
+  table.grid.warm .is-stacked .op-name{color:#8a5252;font-weight:800}
+  table.grid.warm .op-other{color:#a08c8c}
+  table.grid.warm .star{color:#c98a8a}
+  table.grid.warm .empty{color:#c2b0b0}
+
   th.colhead.special{background:#f4f1fa;color:#5b4a86}
-  td.cell-none{background:#fbfaff}
+  /* 「无主盟约」列不再覆盖行底色，改用左侧细竖条做区分 */
+  table.grid tbody td.cell-none{
+    background-image:linear-gradient(90deg,rgba(91,74,134,.16) 0 3px,transparent 3px);
+  }
 
   .empty{color:#c3c9d6}
 
@@ -355,23 +412,29 @@
     font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--ink-2);
   }
 
-  /* ---------- 表3 · 本局不可用（暖红淡化，与可用表区分） ---------- */
+  /* ---------- 表3/表4 · 不可用（暖调，与可用表区分） ---------- */
   .banned-panel{border-color:#eedcdc}
   .banned-panel .title{color:#9b4a4a}
   .banned-panel .title small{color:#b58a8a}
   .banned-panel .legend{color:#b58a8a}
-  table.grid.banned thead th{
-    background:#fdf1f1;color:#9b4a4a;border-bottom-color:#eccdcd;
+  table.grid.warm thead th{
+    background:#f4e8e8;color:#8f4747;border-bottom-color:#e6d6d6;
   }
-  table.grid.banned tbody td{background:#fffafa}
-  table.grid.banned tbody tr:hover td{background:#fdeeee}
-  table.grid.banned .op-name{color:#8b9099;font-weight:600}
-  table.grid.banned .is-stacked .op-name{color:#9c7d7d;font-weight:800}
-  table.grid.banned .star{color:#d9a5a5}
-  table.grid.banned .op:hover{background:#fbe3e3;color:#8a3b3b}
-  table.grid.banned .tier{background:#f2efef;color:#8b9099}
-  table.grid.banned .reason{color:#9b5a5a;font-size:12.5px;line-height:1.6}
+  table.grid.warm thead th.corner{background:#efdede}
   .empty-note{margin:0;padding:22px 4px;color:var(--muted);font-size:13px;text-align:center}
+
+  /* ---------- 表5 · 折叠面板 ---------- */
+  .table-head.clickable{cursor:pointer;user-select:none;border-radius:8px;transition:background .12s}
+  .table-head.clickable:hover{background:#f7f8fb}
+  .table-head.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .t5-tip{
+    display:inline-flex;align-items:center;gap:4px;
+    color:var(--accent);font-weight:700;
+    padding:2px 8px;border-radius:999px;background:var(--accent-weak);
+    border:1px solid #d5e2ff;
+  }
+  .detail-panel .table-wrap{margin-top:2px}
+  .detail-panel.collapsed .title small{opacity:.65}
 
   @media print{
     .topbar,.action-row,#panelBan,.modal{display:none !important}
@@ -380,6 +443,8 @@
     .table-wrap{max-height:none;overflow:visible}
     table.grid thead th{position:static}
     table.grid tbody th{position:static}
+    #tbl5{display:block !important}
+    .t5-tip{display:none}
   }
 </style>
 </head>
@@ -388,7 +453,7 @@
 <header class="topbar">
   <div class="brand">
     <h1>卫戍协议 · 干员卡池筛选</h1>
-    <p>禁 5 主盟约 + 4 副盟约 → 生成可用与不可用干员四张表</p>
+    <p>禁 5 主盟约 + 4 副盟约 → 生成可用与不可用干员五张表</p>
   </div>
   <div class="topbar-actions">
     <span class="pill" id="banSummary">主 0/5 · 副 0/4</span>
@@ -427,7 +492,10 @@
     <article class="panel" style="margin-top:16px">
       <div class="table-head">
         <h2 class="title">表1 · 主盟约 × 阶数<small>格内为可用干员，括号中是该干员除本列盟约外的其余盟约</small></h2>
-        <div class="legend"><span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span></div>
+        <div class="legend">
+          <span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span>
+          <span class="k">行底色 ＝ 阶数（Ⅰ→Ⅵ 与交叉表同色）</span>
+        </div>
       </div>
       <div class="table-wrap" id="tbl1"></div>
     </article>
@@ -435,25 +503,45 @@
     <article class="panel" style="margin-top:16px">
       <div class="table-head">
         <h2 class="title">表2 · 副盟约 × 阶数<small>格内为可用干员，括号中是该干员除本列盟约外的其余盟约</small></h2>
-        <div class="legend"><span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span></div>
+        <div class="legend">
+          <span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span>
+          <span class="k">行底色 ＝ 阶数（Ⅰ→Ⅵ 与交叉表同色）</span>
+        </div>
       </div>
       <div class="table-wrap" id="tbl2"></div>
     </article>
 
     <article class="panel banned-panel" style="margin-top:16px">
       <div class="table-head">
-        <h2 class="title">表3 · 本局不可用干员<small id="bannedCount">已被禁出卡池，本局不必考虑</small></h2>
-        <div class="legend"><span class="k">暖红配色 ＝ 与上方可用表区分</span></div>
+        <h2 class="title">表3 · 不可用 · 被禁主盟约 × 阶数<small id="bannedCoreCount">本局主盟约被全禁的干员</small></h2>
+        <div class="legend">
+          <span class="k">列 ＝ 本局被禁的主盟约</span>
+          <span class="k">暖调降饱和底色 ＝ 这些卡出不了</span>
+        </div>
       </div>
       <div class="table-wrap" id="tbl3"></div>
     </article>
 
-    <article class="panel" style="margin-top:16px">
+    <article class="panel banned-panel" style="margin-top:16px">
       <div class="table-head">
-        <h2 class="title">表4 · 特质详情<small>仅列当前可用干员；点击干员名可查看详情</small></h2>
-        <div class="legend"><span class="k"><b>★</b> ＝ 持续叠加</span></div>
+        <h2 class="title">表4 · 不可用 · 被禁副盟约 × 阶数<small id="bannedSubCount">本局副盟约被全禁的干员</small></h2>
+        <div class="legend">
+          <span class="k">列 ＝ 本局被禁的副盟约</span>
+          <span class="k">暖调降饱和底色 ＝ 这些卡出不了</span>
+        </div>
       </div>
       <div class="table-wrap" id="tbl4"></div>
+    </article>
+
+    <article class="panel detail-panel" style="margin-top:16px">
+      <div class="table-head clickable" id="t5Toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="tbl5">
+        <h2 class="title">表5 · 特质详情<small>仅列当前可用干员；点击干员名可查看详情</small></h2>
+        <div class="legend">
+          <span class="k"><b>★</b> ＝ 持续叠加</span>
+          <span class="k t5-tip" id="t5Tip">已折叠 · 点此展开 ▾</span>
+        </div>
+      </div>
+      <div class="table-wrap" id="tbl5" hidden></div>
     </article>
   </section>
 </main>
@@ -475,7 +563,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.1</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -496,13 +584,15 @@
       </section>
 
       <section class="help-sec">
-        <h4>四张表分别是什么</h4>
+        <h4>五张表分别是什么</h4>
         <ul>
           <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约，外加一列 <b>无主盟约</b>（对应没有核心盟约的干员）；纵轴是 Ⅰ~Ⅵ 阶。</li>
           <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 11 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
-          <li><b>表3 · 本局不可用干员</b>：列出已经被禁出卡池的干员，以及他被废掉的原因（<b>主盟约全禁</b> ／ <b>副盟约全禁</b>）。这张表用<b>暖红配色</b>，与上面两张可用表的蓝白配色区分开，提醒你这些不用考虑。</li>
-          <li><b>表4 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。</li>
+          <li><b>表3 · 不可用 · 被禁主盟约 × 阶数</b>：横轴换成<b>本局被禁的 5 个主盟约</b>，只放「主盟约被全禁、因此出不了」的干员。落在哪一列，就是他被废掉的原因。</li>
+          <li><b>表4 · 不可用 · 被禁副盟约 × 阶数</b>：横轴是本局被禁的 4 个副盟约，只放「副盟约被全禁、因此出不了」的干员。</li>
+          <li><b>表5 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。<b>默认折叠</b>，点标题栏展开。</li>
         </ul>
+        <p class="help-note">表1、表2 的行底色是<b>阶数颜色</b>（Ⅰ 浅灰 → Ⅵ 杏橙，与交叉表同一套）；表3、表4 用同阶色<b>降饱和的暖调版</b>，一眼就能看出「这些卡出不了」。同一位干员如果主、副盟约都被全禁，会同时出现在表3 和表4。</p>
       </section>
 
       <section class="help-sec">
@@ -516,6 +606,7 @@
           <li><b>加粗 + ★</b> ＝ 特质类型为<b>持续叠加</b>；其余类型不加粗、也没有星标。</li>
           <li>括号里是这名干员<b>除本列盟约之外</b>的其余全部盟约（主盟约、副盟约都算）。若没有其它盟约，就不带括号。</li>
           <li>同一格里有多个干员时用顿号 <b>、</b> 分隔。</li>
+          <li>表3、表4 的格子写法与表1、表2 <b>完全一样</b>，只是行底色换成暖调，提醒这些卡本局出不了。</li>
         </ul>
       </section>
 
@@ -528,12 +619,12 @@
           <li>两个维度<b>都通过</b>，这名干员才算可用。</li>
         </ul>
         <p class="help-note">所以带多个盟约的干员会在多列重复出现，这是规则本身导致的，不是重复计算。</p>
-        <p class="help-note">另外，表2 没有「无副盟约」这一列，因此没有副盟约的干员只会出现在表1 和表4（表格里同样能查到他们）。</p>
+        <p class="help-note">另外，表2 没有「无副盟约」这一列，所以没有副盟约的干员在表2 里查不到——请到表1（按主盟约）、表3（若被禁）或表5（若可用）里找他们。</p>
       </section>
 
       <section class="help-sec">
         <h4>怎么查某个干员的特质</h4>
-        <p>在任意一张表里<b>直接点干员名</b>（表3 的不可用干员同样可以点），会弹出该干员的盟约、特质类型、特质（基础 / 精锐）与原型干员。按 <span class="help-kbd">Esc</span>、点空白处或右上角 <b>×</b> 都能关闭。</p>
+        <p>在任意一张表里<b>直接点干员名</b>（表3、表4 的不可用干员同样可以点），会弹出该干员的盟约、特质类型、特质（基础 / 精锐）与原型干员。按 <span class="help-kbd">Esc</span>、点空白处或右上角 <b>×</b> 都能关闭。</p>
       </section>
 
       <section class="help-sec">
@@ -543,7 +634,7 @@
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -640,12 +731,8 @@
 
   /* 该干员被禁出卡池的原因；返回 null 表示本局可用 */
   function banReason(op) {
-    var coreFail = op.core.length > 0 && op.core.every(function (c) {
-      return state.bannedCore.indexOf(c) >= 0;
-    });
-    var addFail = op.add.length > 0 && op.add.every(function (a) {
-      return state.bannedSub.indexOf(a) >= 0;
-    });
+    var coreFail = coreAllBanned(op);
+    var addFail = subAllBanned(op);
     if (!coreFail && !addFail) return null;
     var parts = [];
     if (coreFail) parts.push("主盟约全禁（" + op.core.join("、") + "）");
@@ -658,6 +745,15 @@
       if (!isAvailable(OPS[i])) out.push(OPS[i]);
     }
     return out;
+  }
+  /* 主盟约整体被禁 / 副盟约整体被禁（用于表3、表4 分列归档） */
+  function coreAllBanned(op) {
+    if (!op.core.length) return false;
+    return op.core.every(function (c) { return state.bannedCore.indexOf(c) >= 0; });
+  }
+  function subAllBanned(op) {
+    if (!op.add.length) return false;
+    return op.add.every(function (a) { return state.bannedSub.indexOf(a) >= 0; });
   }
 
   /* 该干员除「本列盟约」外的其余全部盟约 */
@@ -791,8 +887,9 @@
     renderOverview(avail);
     renderTable1(avail);
     renderTable2(avail);
-    renderBannedTable(bannedOps());
-    renderTable4(avail);
+    renderBannedGrids();
+    renderTable5(avail);
+    setTable5(t5Open);   /* 表5 默认折叠，用户的展开状态在本次会话内保留 */
   }
 
   function renderOverview(avail) {
@@ -855,8 +952,8 @@
     return wrap;
   }
 
-  function makeGrid(columns, getOps) {
-    var table = el("table", "grid");
+  function makeGrid(columns, getOps, warm) {
+    var table = el("table", "grid" + (warm ? " warm" : ""));
     var thead = el("thead");
     var hr = el("tr");
     hr.appendChild(el("th", "corner", "阶数"));
@@ -870,7 +967,7 @@
 
     var tbody = el("tbody");
     for (var t = 1; t <= 6; t++) {
-      var tr = el("tr");
+      var tr = el("tr", "t" + t);
       var rh = el("th", "rowhead t" + t, tierLabel(t));
       tr.appendChild(rh);
 
@@ -923,8 +1020,8 @@
     }));
   }
 
-  /* 表4 · 特质详情（仅可用干员） */
-  function renderTable4(avail) {
+  /* 表5 · 特质详情（仅可用干员） */
+  function renderTable5(avail) {
     var rows = avail.slice().sort(function (a, b) {
       return (a.tier - b.tier) || (ORDER[a.name] - ORDER[b.name]);
     });
@@ -970,60 +1067,67 @@
     });
     table.appendChild(tbody);
 
-    var host = $("tbl4");
+    var host = $("tbl5");
     host.textContent = "";
     host.appendChild(table);
   }
 
-  /* 表3 · 本局不可用干员（暖红配色，与可用表区分） */
-  function renderBannedTable(rows) {
-    var host = $("tbl3");
+  /* 表5 折叠开关 */
+  var t5Open = false;
+  function setTable5(open) {
+    t5Open = !!open;
+    var body = $("tbl5"), head = $("t5Toggle"), tip = $("t5Tip");
+    if (!body) return;
+    body.hidden = !t5Open;
+    if (head) head.setAttribute("aria-expanded", t5Open ? "true" : "false");
+    if (tip) tip.textContent = t5Open ? "点此收起 ▴" : "已折叠 · 点此展开 ▾";
+    var panel = head && head.parentNode;
+    if (panel) panel.classList.toggle("collapsed", !t5Open);
+  }
+  function toggleTable5() { setTable5(!t5Open); }
+
+  /* 表3 / 表4 · 不可用干员，版式与表1/表2 相同：
+     横轴 = 本局被禁的盟约（主盟约给表3，副盟约给表4），纵轴 = 阶数。
+     只收录「该维度全部盟约都被禁」的干员，因此落在哪一列就是他出不了的原因。 */
+  function renderBannedGrid(kind) {
+    var bannedList = (kind === "core" ? CORE : SUB_ALL).filter(function (c) {
+      return (kind === "core" ? state.bannedCore : state.bannedSub).indexOf(c) >= 0;
+    });
+    var host = $(kind === "core" ? "tbl3" : "tbl4");
+    var meta = $(kind === "core" ? "bannedCoreCount" : "bannedSubCount");
     host.textContent = "";
 
-    var sorted = rows.slice().sort(function (a, b) {
-      return (a.tier - b.tier) || (ORDER[a.name] - ORDER[b.name]);
+    var dead = bannedOps().filter(function (op) {
+      return kind === "core" ? coreAllBanned(op) : subAllBanned(op);
     });
 
-    var meta = $("bannedCount");
     if (meta) {
-      meta.textContent = sorted.length
-        ? "已被禁出卡池，共 " + sorted.length + " 名，本局不必考虑"
-        : "本局没有出不了的干员";
+      var what = kind === "core" ? "主盟约" : "副盟约";
+      meta.textContent = dead.length
+        ? "本局" + what + "被全禁，共 " + dead.length + " 名干员出不了卡池"
+        : "本局没有因" + what + "被全禁而出不了的干员";
     }
 
-    if (!sorted.length) {
-      host.appendChild(el("p", "empty-note", "本局没有出不了的干员。"));
+    if (!dead.length) {
+      host.appendChild(el("p", "empty-note",
+        "本局没有因" + (kind === "core" ? "主盟约" : "副盟约") + "被全禁而出不了的干员。"));
       return;
     }
 
-    var table = el("table", "grid banned");
-    var thead = el("thead");
-    var hr = el("tr");
-    ["干员", "阶数", "被禁原因"].forEach(function (h) { hr.appendChild(el("th", "", h)); });
-    thead.appendChild(hr);
-    table.appendChild(thead);
+    var columns = bannedList.map(function (c) { return { key: c, label: c }; });
+    host.appendChild(makeGrid(columns, function (t, col) {
+      return dead.filter(function (op) {
+        if (op.tier !== t) return false;
+        return kind === "core"
+          ? op.core.indexOf(col.key) >= 0
+          : op.add.indexOf(col.key) >= 0;
+      });
+    }, true));
+  }
 
-    var tbody = el("tbody");
-    sorted.forEach(function (op) {
-      var tr = el("tr");
-
-      var nameCell = el("td", "name");
-      var wrap = el("span", "op" + (op.type === "持续叠加" ? " is-stacked" : ""));
-      wrap.appendChild(el("span", "op-name", op.name));
-      if (op.type === "持续叠加") wrap.appendChild(el("span", "star", "★"));
-      nameCell.appendChild(wrap);
-      nameCell.title = "点击查看详情";
-      nameCell.addEventListener("click", function () { openModal(op.name); });
-      tr.appendChild(nameCell);
-
-      tr.appendChild(el("td", "tier t" + op.tier, tierLabel(op.tier)));
-
-      tr.appendChild(el("td", "reason", banReason(op) || "—"));
-
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    host.appendChild(table);
+  function renderBannedGrids() {
+    renderBannedGrid("core");
+    renderBannedGrid("sub");
   }
 
   /* ========== 模态框 ========== */
@@ -1129,7 +1233,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.1";
+  var APP_VER = "v1.2";
   var APP_AUTHOR = "铲铲铲铲哥";
 
   /* 数据版本信息：填入说明与页脚 */
@@ -1162,6 +1266,7 @@
     state.bannedCore = [];
     state.bannedSub = [];
     state.built = false;
+    setTable5(false);
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
     syncUI();
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1169,6 +1274,16 @@
 
   $("modalClose").addEventListener("click", closeModal);
   modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+
+  /* 表5 折叠 */
+  var t5Head = $("t5Toggle");
+  t5Head.addEventListener("click", toggleTable5);
+  t5Head.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      toggleTable5();
+    }
+  });
 
   $("btnHelp").addEventListener("click", openHelp);
   $("helpClose").addEventListener("click", closeHelp);
