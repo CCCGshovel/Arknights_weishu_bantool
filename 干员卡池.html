@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.2">
+<meta name="version" content="v1.2.1">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -241,8 +241,10 @@
   .empty{color:#c3c9d6}
 
   /* ---------- 干员条目 ---------- */
+  .op-line{display:block;white-space:nowrap;line-height:1.7}
   .op{
-    display:inline;
+    display:inline-block;
+    white-space:nowrap;
     border-radius:4px;
     cursor:pointer;
     padding:0 2px;
@@ -251,12 +253,7 @@
   .op:hover{background:var(--accent);color:#fff}
   .op:hover .star{color:#ffe9b0}
   .op:hover .op-other{color:#dbe6ff}
-  .op.is-stacked{
-    font-weight:800;
-    background:var(--star-weak);
-    box-shadow:inset 0 -1px 0 rgba(201,123,14,.25);
-  }
-  .op.is-stacked:hover{background:var(--accent)}
+  .op.is-stacked{font-weight:800}
   .op-other{font-weight:500;color:var(--muted);font-size:12px}
   .star{margin-left:1px;color:var(--star);font-weight:900;font-size:12px}
 
@@ -563,7 +560,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2.1</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -605,7 +602,7 @@
         <ul>
           <li><b>加粗 + ★</b> ＝ 特质类型为<b>持续叠加</b>；其余类型不加粗、也没有星标。</li>
           <li>括号里是这名干员<b>除本列盟约之外</b>的其余全部盟约（主盟约、副盟约都算）。若没有其它盟约，就不带括号。</li>
-          <li>同一格里有多个干员时用顿号 <b>、</b> 分隔。</li>
+          <li>一格里有多个干员时，<b>每个干员单独占一行</b>，名字不会被拆到两行去。</li>
           <li>表3、表4 的格子写法与表1、表2 <b>完全一样</b>，只是行底色换成暖调，提醒这些卡本局出不了。</li>
         </ul>
       </section>
@@ -634,7 +631,7 @@
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.2.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -977,9 +974,11 @@
         if (!list.length) {
           td.appendChild(el("span", "empty", "—"));
         } else {
-          list.forEach(function (op, i) {
-            if (i) td.appendChild(document.createTextNode("、"));
-            td.appendChild(opEntry(op, col.key));
+          /* 一名干员单独一行，条目本身不换行 */
+          list.forEach(function (op) {
+            var line = el("div", "op-line");
+            line.appendChild(opEntry(op, col.key));
+            td.appendChild(line);
           });
         }
         tr.appendChild(td);
@@ -1233,7 +1232,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.2";
+  var APP_VER = "v1.2.1";
   var APP_AUTHOR = "铲铲铲铲哥";
 
   /* 数据版本信息：填入说明与页脚 */
