@@ -340,6 +340,15 @@
     background:var(--accent-weak);color:#22498f;
     font-size:11.5px;font-weight:800;letter-spacing:.02em;
   }
+  .help-link{
+    color:var(--accent);text-decoration:none;
+    border-bottom:1px solid rgba(37,99,235,.35);
+  }
+  .help-link:hover{border-bottom-color:var(--accent)}
+  .footer-note a{
+    color:inherit;text-decoration:none;border-bottom:1px dotted var(--line-strong);
+  }
+  .footer-note a:hover{color:var(--accent);border-bottom-color:var(--accent)}
   .help-kbd{
     display:inline-block;padding:0 5px;border-radius:4px;
     background:#eef0f5;border:1px solid var(--line-strong);
@@ -424,7 +433,7 @@
 </main>
 
 <p class="footer-note">
-  数据来源：卫戍协议_干员数据库.csv ＋ 卫戍协议_盟约交叉表.xlsx「按阶明细」。<span id="footMeta"></span>可用性判定：无主盟约视为通过，否则任一主盟约未被禁即通过；副盟约同理，两维度取 AND。
+  数据来源：<a href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，整理为 卫戍协议_干员数据库.csv 与 卫戍协议_盟约交叉表.xlsx「按阶明细」。<span id="footMeta"></span>可用性判定：无主盟约视为通过，否则任一主盟约未被禁即通过；副盟约同理，两维度取 AND。
 </p>
 
 <div class="modal" id="modal" hidden>
@@ -505,7 +514,8 @@
         <ul>
           <li>当前选择会<b>自动记住</b>，关掉页面重开还在；点右上角 <b>重置</b> 可清空。</li>
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
-          <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据。</li>
+          <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
+          <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
           <li>工具版本 <b id="verMeta">v1.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
