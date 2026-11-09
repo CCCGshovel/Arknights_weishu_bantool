@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.2.2">
+<meta name="version" content="v1.2.3">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -86,6 +86,8 @@
   }
   .brand h1{font-size:17px}
   .brand p{margin:1px 0 0;font-size:12px;color:var(--muted)}
+  .brand .game-ver{margin-top:3px;font-size:11.5px;color:#7b8ca1}
+  .brand .game-ver b{color:#5d7590;font-weight:700}
   .topbar-actions{display:flex;align-items:center;gap:10px}
 
   .pill{
@@ -445,6 +447,7 @@
   <div class="brand">
     <h1>卫戍协议 · 干员卡池筛选</h1>
     <p>禁 5 主盟约 + 4 副盟约 → 生成可用与不可用干员五张表</p>
+    <p class="game-ver">对应本体 <b id="gameVer">2026.11.8</b> 更新的《卫戍协议：规程》</p>
   </div>
   <div class="topbar-actions">
     <span class="pill" id="banSummary">主 0/5 · 副 0/4</span>
@@ -554,7 +557,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2.2</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.2.3</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -624,8 +627,9 @@
           <li>当前选择会<b>自动记住</b>，关掉页面重开还在；点右上角 <b>重置</b> 可清空。</li>
           <li>禁用词条或取消禁用后，表格会<b>立即重算</b>；若取消到不满 5+4，表格会先收起，重新选满即可。</li>
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
+          <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.2.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.2.3</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -1221,8 +1225,11 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.2.2";
+  var APP_VER = "v1.2.3";
   var APP_AUTHOR = "铲铲铲铲哥";
+  /* 本工具对应的游戏本体与玩法版本 */
+  var GAME_VER = "2026.11.8";
+  var GAME_MODE = "卫戍协议：规程";
 
   /* 数据版本信息：填入说明与页脚 */
   function fillMeta() {
@@ -1230,8 +1237,10 @@
     if (D.built) txt += "，" + D.built + " 生成";
     var a = $("dataMeta");
     if (a) a.textContent = txt;
+    var g = $("gameVer");
+    if (g) g.textContent = GAME_VER;
     var f = $("footMeta");
-    if (f) f.textContent = "数据版本：" + txt + " ｜ " + APP_VER + " ｜ 作者 " + APP_AUTHOR + "。";
+    if (f) f.textContent = "数据版本：" + txt + " ｜ 对应本体 " + GAME_VER + " 更新《" + GAME_MODE + "》 ｜ " + APP_VER + " ｜ 作者 " + APP_AUTHOR + "。";
     var v = $("verMeta");
     if (v) v.textContent = APP_VER;
     var c = $("verChip");
