@@ -9,6 +9,9 @@
     卫戍协议卡池_v<版本>.html   —— 干员卡池.html 的版本化副本
     使用说明.txt                —— 面向接收方的纯文本说明（UTF-8 BOM + CRLF，记事本直接可读）
     卫戍协议卡池_v<版本>.zip    —— 上面两个文件的打包
+
+副产物（仓库根目录）：
+    index.html                  —— GitHub Pages 入口，每次打包都与 干员卡池.html 同步
 """
 import re
 import sys
@@ -17,7 +20,18 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 HTML = ROOT / "干员卡池.html"
+INDEX = ROOT / "index.html"
 OUT = ROOT / "dist"
+
+
+def sync_index():
+    """把 干员卡池.html 原样同步为 index.html（GitHub Pages 只认 index.html）。"""
+    data = HTML.read_bytes()
+    if INDEX.exists() and INDEX.read_bytes() == data:
+        print("入口: index.html 已是最新，无需同步")
+        return
+    INDEX.write_bytes(data)
+    print("入口: index.html 已同步 (%d 字节)" % len(data))
 
 
 def read_var(src, name):
@@ -118,6 +132,8 @@ def main():
     author = read_var(src, "APP_AUTHOR")
     game_ver = read_var(src, "GAME_VER")
     game_mode = read_var(src, "GAME_MODE")
+
+    sync_index()
 
     OUT.mkdir(exist_ok=True)
     base = "卫戍协议卡池_%s" % app_ver

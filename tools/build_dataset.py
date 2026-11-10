@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CSV_PATH = ROOT / "卫戍协议_干员数据库.csv"
 XLSX_PATH = ROOT / "卫戍协议_盟约交叉表.xlsx"
 HTML_PATH = ROOT / "干员卡池.html"
+INDEX_PATH = ROOT / "index.html"
 
 # 十大核心盟约（有序）
 CORE = ["炎", "萨尔贡", "维多利亚", "谢拉格", "阿戈尔",
@@ -168,6 +169,8 @@ def main() -> int:
                 + DATA_START + SCRIPT_OPEN + blob + SCRIPT_CLOSE + DATA_END
                 + html[j + len(DATA_END):])
     HTML_PATH.write_text(new_html, encoding="utf-8")
+    # 注入后同步 Pages 入口，避免 index.html 落后于本体
+    INDEX_PATH.write_bytes(HTML_PATH.read_bytes())
 
     # 统计自检
     by_tier = {}
