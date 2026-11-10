@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.4.3">
+<meta name="version" content="v1.6.0">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -414,6 +414,13 @@
     background:#f4e8e8;color:#8f4747;border-bottom-color:#e6d6d6;
   }
   table.grid.warm thead th.corner{background:#efdede}
+  /* 表4 遍历全部副盟约：被禁的那几列列头加深并标「禁」 */
+  table.grid.warm thead th.colhead.banned-col{background:#edd2d2;color:#8b3f3f}
+  .ban-tag{
+    display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;
+    background:#be615b;color:#fff;font-size:10px;font-weight:700;
+    line-height:1.6;vertical-align:1px;letter-spacing:0;
+  }
   .empty-note{margin:0;padding:22px 4px;color:var(--muted);font-size:13px;text-align:center}
 
   /* ---------- 表5 · 折叠面板 ---------- */
@@ -518,7 +525,7 @@
 
     <article class="panel banned-panel" style="margin-top:16px">
       <div class="table-head">
-        <h2 class="title">表4 · 不可用 · 被禁副盟约 × 阶数<small id="bannedSubCount">本局副盟约被全禁的干员</small></h2>
+        <h2 class="title">表4 · 不可用 · 全部副盟约 × 阶数<small id="bannedSubCount">出不了的干员按副盟约归类</small></h2>
         <div class="legend">
           <span class="k">列 ＝ 本局被禁的副盟约</span>
           <span class="k">暖调降饱和底色 ＝ 这些卡出不了</span>
@@ -557,7 +564,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.4.3</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.6.0</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -583,10 +590,10 @@
           <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约；纵轴是 Ⅰ~Ⅵ 阶。没有主盟约的干员不在这里列出，他们在表2 里按副盟约能查到。</li>
           <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 10 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
           <li><b>表3 · 不可用 · 被禁主盟约 × 阶数</b>：横轴换成<b>本局被禁的 5 个主盟约</b>，只放「主盟约被全禁、因此出不了」的干员。落在哪一列，就是他被废掉的原因。</li>
-          <li><b>表4 · 不可用 · 被禁副盟约 × 阶数</b>：横轴是本局被禁的 5 个副盟约，只放「副盟约被全禁、因此出不了」的干员。</li>
+          <li><b>表4 · 不可用 · 全部副盟约 × 阶数</b>：横轴是<b>全部 15 个副盟约</b>（本局被禁的那几列，列头加深并标「禁」），只放本局出不了的干员。重点看<b>没标「禁」的列</b>：如果那里面还有名字，说明这名干员<b>副盟约没被禁、但主盟约被全禁</b>，照样出不了 —— 这样每个没被禁的副盟约实际还剩多少张卡，一眼就清楚。</li>
           <li><b>表5 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。<b>默认折叠</b>，点标题栏展开。</li>
         </ul>
-        <p class="help-note">表1、表2 的行底色是<b>阶数颜色</b>（Ⅰ 浅灰 → Ⅵ 杏橙，与交叉表同一套）；表3、表4 用同阶色<b>降饱和的暖调版</b>，一眼就能看出「这些卡出不了」。同一位干员如果主、副盟约都被全禁，会同时出现在表3 和表4。</p>
+        <p class="help-note">表1、表2 的行底色是<b>阶数颜色</b>（Ⅰ 浅灰 → Ⅵ 杏橙，与交叉表同一套）；表3、表4 用同阶色<b>降饱和的暖调版</b>，一眼就能看出「这些卡出不了」。主盟约被全禁的干员会同时出现在表3 和表4；只是副盟约被全禁的，只出现在表4 标着「禁」的列里。</p>
       </section>
 
       <section class="help-sec">
@@ -613,6 +620,7 @@
         </ul>
         <p class="help-note">所以带多个主盟约的干员会在多列重复出现，这是规则本身导致的，不是重复计算。</p>
         <p class="help-note">主盟约没被禁、但副盟约全被禁的干员<b>依然能出</b>，会正常出现在表1 或表2 里，不会进表3 / 表4。</p>
+        <p class="help-note">反过来，主盟约被全禁的干员身上若带副盟约，即使那个副盟约没被禁，也会出现在表4 相应列里 —— 表4 遍历全部 15 个副盟约，正是为了让这种「被连带卡住」的情况露出来。</p>
         <p class="help-note">两张网格都只按「有的盟约」分列，所以：没有副盟约的干员在表2 里查不到（去表1 按主盟约找）；没有主盟约的干员在表1 里查不到（去表2 按副盟约找）。表5 是完整名单，两边都能兜底。</p>
       </section>
 
@@ -629,7 +637,7 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.4.3</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.6.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -732,14 +740,10 @@
     }
     return out;
   }
-  /* 主盟约整体被禁 / 副盟约整体被禁（用于表3、表4 分列归档） */
+  /* 主盟约整体被禁（表3 归组用） */
   function coreAllBanned(op) {
     if (!op.core.length) return false;
     return op.core.every(function (c) { return state.bannedCore.indexOf(c) >= 0; });
-  }
-  function subAllBanned(op) {
-    if (!op.add.length) return false;
-    return op.add.every(function (a) { return state.bannedSub.indexOf(a) >= 0; });
   }
 
   /* 该干员除「本列盟约」外的其余全部盟约 */
@@ -944,7 +948,12 @@
     var hr = el("tr");
     hr.appendChild(el("th", "corner", "阶数"));
     columns.forEach(function (col) {
-      hr.appendChild(el("th", "colhead", col.label));
+      var th = el("th", "colhead" + (col.banned ? " banned-col" : ""), col.label);
+      if (col.banned) {
+        th.appendChild(el("span", "ban-tag", "禁"));
+        th.title = "本局已禁用的盟约";
+      }
+      hr.appendChild(th);
     });
     thead.appendChild(hr);
     table.appendChild(thead);
@@ -1072,39 +1081,45 @@
   function toggleTable5() { setTable5(!t5Open); }
 
   /* 表3 / 表4 · 不可用干员，版式与表1/表2 相同：
-     横轴 = 本局被禁的盟约（主盟约给表3，副盟约给表4），纵轴 = 阶数。
-     只收录「该维度全部盟约都被禁」的干员，因此落在哪一列就是他出不了的原因。 */
+     表3 横轴 = 本局被禁的主盟约（只收「主盟约全禁」的干员）；
+     表4 横轴 = **全部 15 个副盟约**，被禁的那几列标「禁」，
+     未被禁的列里如果还有人，就是「副盟约没禁、但主盟约被全禁」被连带卡住的卡。 */
   function renderBannedGrid(kind) {
-    var bannedList = (kind === "core" ? CORE : SUB_ALL).filter(function (c) {
-      return (kind === "core" ? state.bannedCore : state.bannedSub).indexOf(c) >= 0;
-    });
-    var host = $(kind === "core" ? "tbl3" : "tbl4");
-    var meta = $(kind === "core" ? "bannedCoreCount" : "bannedSubCount");
+    var isCore = kind === "core";
+    var host = $(isCore ? "tbl3" : "tbl4");
+    var meta = $(isCore ? "bannedCoreCount" : "bannedSubCount");
     host.textContent = "";
 
     var dead = bannedOps().filter(function (op) {
-      return kind === "core" ? coreAllBanned(op) : subAllBanned(op);
+      if (isCore) return coreAllBanned(op);
+      return op.add.length > 0;
     });
 
     if (meta) {
-      var what = kind === "core" ? "主盟约" : "副盟约";
-      var tail = kind === "core" ? "，共 " : "、且确实出不了卡池，共 ";
-      meta.textContent = dead.length
-        ? "本局" + what + "被全禁" + tail + dead.length + " 名干员出不了卡池"
-        : "本局没有因" + what + "被全禁而出不了的干员";
+      meta.textContent = isCore
+        ? "本局主盟约被全禁、直接出不了：共 " + dead.length + " 名"
+        : "本局出不了、且身上带副盟约的干员全在这（含未被禁副盟约被主盟约连带卡住的）：共 " + dead.length + " 名";
     }
 
     if (!dead.length) {
-      host.appendChild(el("p", "empty-note",
-        "本局没有因" + (kind === "core" ? "主盟约" : "副盟约") + "被全禁而出不了的干员。"));
+      host.appendChild(el("p", "empty-note", isCore
+        ? "本局没有因主盟约被全禁而出不了的干员。"
+        : "本局没有身上带副盟约却出不了的干员。"));
       return;
     }
 
-    var columns = bannedList.map(function (c) { return { key: c, label: c }; });
+    var columns = isCore
+      ? CORE.filter(function (c) {
+          return state.bannedCore.indexOf(c) >= 0;
+        }).map(function (c) { return { key: c, label: c }; })
+      : SUB_ALL.map(function (c) {
+          return { key: c, label: c, banned: state.bannedSub.indexOf(c) >= 0 };
+        });
+
     host.appendChild(makeGrid(columns, function (t, col) {
       return dead.filter(function (op) {
         if (op.tier !== t) return false;
-        return kind === "core"
+        return isCore
           ? op.core.indexOf(col.key) >= 0
           : op.add.indexOf(col.key) >= 0;
       });
@@ -1219,7 +1234,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.4.3";
+  var APP_VER = "v1.6.0";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
