@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.6.0">
+<meta name="version" content="v1.6.1">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -423,6 +423,28 @@
   }
   .empty-note{margin:0;padding:22px 4px;color:var(--muted);font-size:13px;text-align:center}
 
+  /* ---------- 表2 · 视图切换 / 被禁副盟约剩余卡 ----------
+     刻意避开表4 的暖红：暖红在本工具里已经等于「出不了」，这里列的是仍能出的卡。
+     雾蓝灰 + 45° 淡斜纹 = 通行的「冻结 / 禁用」视觉语言，与冷暖两个方向都不撞。 */
+  .head-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .seg{display:inline-flex;padding:2px;border-radius:999px;background:#eef1f6;border:1px solid #dbe2ec}
+  .seg-btn{
+    appearance:none;-webkit-appearance:none;border:0;background:transparent;cursor:pointer;
+    font:inherit;font-size:12px;font-weight:700;color:#5b6b7c;white-space:nowrap;
+    padding:3px 12px;border-radius:999px;line-height:1.65;
+    transition:background .12s,color .12s;
+  }
+  .seg-btn:hover{color:#2b3a4a}
+  .seg-btn.on{background:#fff;color:#2f6fed;box-shadow:0 1px 3px rgba(24,40,72,.18)}
+  .seg-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  table.grid thead th.colhead.frozen-col{
+    color:#40566b;background:#e4eaf2;border-bottom-color:#c9d5e2;
+    background-image:repeating-linear-gradient(45deg,rgba(96,124,152,.18) 0 1px,transparent 1px 6px);
+  }
+  .ban-tag.cool{background:#6e8aa6}
+  .t2-note{margin:10px 2px 0;font-size:12px;color:var(--muted)}
+  .t2-note[hidden]{display:none}
+
   /* ---------- 表5 · 折叠面板 ---------- */
   .table-head.clickable{cursor:pointer;user-select:none;border-radius:8px;transition:background .12s}
   .table-head.clickable:hover{background:#f7f8fb}
@@ -503,13 +525,20 @@
 
     <article class="panel" style="margin-top:16px">
       <div class="table-head">
-        <h2 class="title">表2 · 副盟约 × 阶数<small>格内为可用干员，括号中是该干员除本列盟约外的其余盟约</small></h2>
-        <div class="legend">
-          <span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span>
-          <span class="k">行底色 ＝ 阶数（Ⅰ→Ⅵ 与交叉表同色）</span>
+        <h2 class="title">表2 · 副盟约 × 阶数<small id="t2Sub">格内为可用干员，括号中是该干员除本列盟约外的其余盟约</small></h2>
+        <div class="head-right">
+          <div class="seg" id="t2Seg" role="tablist" aria-label="表2 视图">
+            <button type="button" class="seg-btn on" data-t2="alive" role="tab" aria-selected="true">未禁盟约</button>
+            <button type="button" class="seg-btn" data-t2="banned" role="tab" aria-selected="false">被禁盟约 · 剩余卡</button>
+          </div>
+          <div class="legend">
+            <span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span>
+            <span class="k">行底色 ＝ 阶数（Ⅰ→Ⅵ 与交叉表同色）</span>
+          </div>
         </div>
       </div>
       <div class="table-wrap" id="tbl2"></div>
+      <p class="t2-note" id="t2Note" hidden>列内只列本局仍能出的卡（靠身上其它盟约活下来）；已经出不了的干员在表4。</p>
     </article>
 
     <article class="panel banned-panel" style="margin-top:16px">
@@ -564,7 +593,7 @@
 <div class="modal" id="helpModal" hidden>
   <div class="modal-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.6.0</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.6.1</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -588,7 +617,7 @@
         <h4>五张表分别是什么</h4>
         <ul>
           <li><b>表1 · 主盟约 × 阶数</b>：横轴是没被禁的 5 个主盟约；纵轴是 Ⅰ~Ⅵ 阶。没有主盟约的干员不在这里列出，他们在表2 里按副盟约能查到。</li>
-          <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 10 个副盟约，纵轴同上。被禁的列直接隐藏。</li>
+          <li><b>表2 · 副盟约 × 阶数</b>：横轴是没被禁的 10 个副盟约，纵轴同上。被禁的列不显示在这里。表2 右上角有个切换器，切到<b>「被禁盟约 · 剩余卡」</b>就换成另一张表：横轴变成<b>本局被禁的那 5 个副盟约</b>，格内只列<b>靠身上其它盟约仍然能出</b>的干员，列头写着「剩余/总数」——用来回答「这个副盟约被禁了，我手上还剩哪几张能用的」。</li>
           <li><b>表3 · 不可用 · 被禁主盟约 × 阶数</b>：横轴换成<b>本局被禁的 5 个主盟约</b>，只放「主盟约被全禁、因此出不了」的干员。落在哪一列，就是他被废掉的原因。</li>
           <li><b>表4 · 不可用 · 全部副盟约 × 阶数</b>：横轴是<b>全部 15 个副盟约</b>（本局被禁的那几列，列头加深并标「禁」），只放本局出不了的干员。重点看<b>没标「禁」的列</b>：如果那里面还有名字，说明这名干员<b>副盟约没被禁、但主盟约被全禁</b>，照样出不了 —— 这样每个没被禁的副盟约实际还剩多少张卡，一眼就清楚。</li>
           <li><b>表5 · 特质详情</b>：把当前所有可用干员按阶数列出，含主/副盟约、特质类型、特质（基础/精锐）与原型干员。<b>默认折叠</b>，点标题栏展开。</li>
@@ -637,7 +666,7 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具为单文件离线页面，不联网、不上传任何数据（点来源链接时会用浏览器打开 prts.wiki）。</li>
-          <li>工具版本 <b id="verMeta">v1.6.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.6.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -672,6 +701,8 @@
   var CORE_LIMIT = 5;
   var SUB_LIMIT  = 5;
   var LS_KEY     = "ws-ganka-pool-v1";
+  var T2_KEY     = "ws-ganka-t2view-v1";
+  var t2Mode     = "alive";   /* "alive" 未禁盟约 | "banned" 被禁盟约的剩余卡 */
 
   var BY_NAME = Object.create(null);
   var ORDER   = Object.create(null);
@@ -715,6 +746,33 @@
       }
       state.built = !!o.built;
     } catch (e) { /* 损坏则忽略 */ }
+  }
+
+  /* 表2 视图偏好（独立键，不进 ban 状态） */
+  function loadT2() {
+    var v;
+    try { v = localStorage.getItem(T2_KEY); } catch (e) { return; }
+    if (v === "banned" || v === "alive") t2Mode = v;
+  }
+  function saveT2() {
+    try { localStorage.setItem(T2_KEY, t2Mode); } catch (e) { /* file:// 下可能不可用 */ }
+  }
+  function syncT2Seg() {
+    var seg = $("t2Seg");
+    if (!seg) return;
+    var btns = seg.querySelectorAll(".seg-btn");
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute("data-t2") === t2Mode;
+      btns[i].classList.toggle("on", on);
+      btns[i].setAttribute("aria-selected", on ? "true" : "false");
+    }
+  }
+  function setT2(mode) {
+    if (mode !== "alive" && mode !== "banned") return;
+    if (t2Mode === mode) return;
+    t2Mode = mode;
+    saveT2();
+    if (state.built) renderTable2(availableOps());
   }
 
   /* ========== 可用性判定 ========== */
@@ -948,10 +1006,15 @@
     var hr = el("tr");
     hr.appendChild(el("th", "corner", "阶数"));
     columns.forEach(function (col) {
-      var th = el("th", "colhead" + (col.banned ? " banned-col" : ""), col.label);
+      var cls = "colhead" + (col.banned ? " banned-col" : "") + (col.frozen ? " frozen-col" : "");
+      var th = el("th", cls, col.label);
       if (col.banned) {
         th.appendChild(el("span", "ban-tag", "禁"));
         th.title = "本局已禁用的盟约";
+      }
+      if (col.frozen) {
+        th.appendChild(el("span", "ban-tag cool", "禁"));
+        th.title = "本局已禁用的副盟约 · 列内只列仍能出的卡（剩余/总数）";
       }
       hr.appendChild(th);
     });
@@ -1000,13 +1063,49 @@
     }));
   }
 
+  /* 某个副盟约在全库里的总人数（「剩余/总数」用） */
+  function subTotalCount(c) {
+    var n = 0;
+    for (var i = 0; i < OPS.length; i++) {
+      if (OPS[i].add.indexOf(c) >= 0) n++;
+    }
+    return n;
+  }
+
+  /* 表2 · 副盟约 × 阶数
+     两种视图：
+       alive  —— 未禁盟约（默认，和以前完全一致）
+       banned —— 被禁盟约的剩余卡：只列靠其它盟约仍能出的干员，列头带「剩余/总数」
+     已出不了的干员不在本表，统一在表4。 */
   function renderTable2(avail) {
+    var host = $("tbl2");
+    var note = $("t2Note");
+    var bannedView = (t2Mode === "banned");
+    host.textContent = "";
+    if (note) note.hidden = !bannedView;
+    syncT2Seg();
+
+    if (bannedView) {
+      var cols = state.bannedSub.map(function (c) {
+        var rest = avail.filter(function (op) { return op.add.indexOf(c) >= 0; }).length;
+        return { key: c, label: c + "　" + rest + "/" + subTotalCount(c), frozen: true };
+      });
+      if (!cols.length) {
+        host.appendChild(el("p", "empty-note", "本局还没有禁用任何副盟约。"));
+        return;
+      }
+      host.appendChild(makeGrid(cols, function (t, col) {
+        return avail.filter(function (op) {
+          return op.tier === t && op.add.indexOf(col.key) >= 0;
+        });
+      }));
+      return;
+    }
+
     var columns = SUB_ALL
       .filter(function (c) { return state.bannedSub.indexOf(c) < 0; })
       .map(function (c) { return { key: c, label: c }; });
 
-    var host = $("tbl2");
-    host.textContent = "";
     host.appendChild(makeGrid(columns, function (t, col) {
       return avail.filter(function (op) {
         return op.tier === t && op.add.indexOf(col.key) >= 0;
@@ -1234,7 +1333,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.6.0";
+  var APP_VER = "v1.6.1";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
@@ -1272,6 +1371,8 @@
     state.bannedCore = [];
     state.bannedSub = [];
     state.built = false;
+    t2Mode = "alive";
+    saveT2();
     setTable5(false);
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
     syncUI();
@@ -1290,6 +1391,22 @@
       toggleTable5();
     }
   });
+
+  /* 表2 视图切换 */
+  (function () {
+    var seg = $("t2Seg");
+    if (!seg) return;
+    seg.addEventListener("click", function (e) {
+      var t = e.target;
+      while (t && t !== seg) {
+        if (t.getAttribute && t.getAttribute("data-t2")) {
+          setT2(t.getAttribute("data-t2"));
+          return;
+        }
+        t = t.parentNode;
+      }
+    });
+  })();
 
   $("btnHelp").addEventListener("click", openHelp);
   $("helpClose").addEventListener("click", closeHelp);
@@ -1313,6 +1430,7 @@
 
   renderChips();
   load();
+  loadT2();
   syncUI();
   fillMeta();
 
