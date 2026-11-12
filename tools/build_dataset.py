@@ -28,6 +28,7 @@ LAYERS_XLSX = ROOT / "卫戍协议_盟约层数表.xlsx"
 SKLAND_DIR = ROOT / "lineup" / "data" / "skland"
 HTML_PATH = ROOT / "干员卡池.html"
 INDEX_PATH = ROOT / "index.html"
+AVATAR_CACHE = ROOT / "_tmp" / "avatars_webp44.json"   # 由 tools/fetch_avatars.py 生成，不入库
 
 # 十大核心盟约（有序）
 CORE = ["炎", "萨尔贡", "维多利亚", "谢拉格", "阿戈尔",
@@ -42,6 +43,16 @@ SUB_BANNABLE = list(SUB_ALL)
 SUB_FREE = []
 
 TIER_ROMAN = {1: "Ⅰ", 2: "Ⅱ", 3: "Ⅲ", 4: "Ⅳ", 5: "Ⅴ", 6: "Ⅵ"}
+
+# 盟约激活所需人数（官方「S.W.E.E.P.盟约报告」口径）：
+# 核心盟约一律 3 人；副盟约多为 2 人，投资人为 3 人，调和 / 独行为 1 人。
+BOND_ACT_FALLBACK = {
+    "炎": 3, "萨尔贡": 3, "维多利亚": 3, "谢拉格": 3, "阿戈尔": 3,
+    "叙拉古": 3, "卡西米尔": 3, "乌萨斯": 3, "伊比利亚": 3, "莱塔尼亚": 3,
+    "精准": 2, "迅捷": 2, "灵巧": 2, "坚守": 2, "助力": 2, "远见": 2, "奇迹": 2,
+    "投资人": 3, "突袭": 2, "不屈": 2, "调和": 1, "协防干员": 2, "独行": 1,
+    "绝技": 2, "聚合": 2, "奥术": 2,
+}
 
 DATA_START = "<!--WS-DATA-START-->"
 DATA_END = "<!--WS-DATA-END-->"
@@ -87,10 +98,11 @@ def load_cross() -> dict[str, dict]:
     return out
 
 
-def load_skland_meta() -> tuple[dict[str, str], dict[str, str]]:
-    """从 lineup/data/skland/ 快照读 charId 与盟约 ID→中文名映射（可选输入）。"""
+def load_skland_meta() -> tuple[dict[str, str], dict[str, str], dict[str, int]]:
+    """从 lineup/data/skland/ 快照读 charId、盟约 ID→中文名、盟约激活所需人数（可选输入）。"""
     cids: dict[str, str] = {}
     bond_names: dict[str, str] = {}
+    bond_act: dict[str, int] = {}
     ops_csv = SKLAND_DIR / "干员.csv"
     if ops_csv.exists():
         with ops_csv.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -111,7 +123,30 @@ def load_skland_meta() -> tuple[dict[str, str], dict[str, str]]:
                 nm = (r.get(name_key) or "").strip()
                 if bid and nm:
                     bond_names[bid] = nm
-    return cids, bond_names
+    for nm, n in load_bond_act().items():
+        bond_act[nm] = n
+    return cids, bond_names, bond_act
+
+
+def load_bond_act() -> dict[str, int]:
+    """盟约 → 激活所需人数（核心一律 3；副盟约 2，投资人 3，调和/独行 1）。
+
+    优先取 skland 快照里的 activeCount，读不到就用内置常量。
+    """
+    act: dict[str, int] = dict(BOND_ACT_FALLBACK)
+    path = SKLAND_DIR / "garrison_resource.json"
+    if path.exists():
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            data = raw.get("data") or raw
+            for b in data.get("bonds") or []:
+                nm = (b.get("name") or "").strip()
+                n = b.get("activeCount")
+                if nm and isinstance(n, int) and n > 0:
+                    act[nm] = n
+        except Exception as exc:  # pragma: no cover - 快照异常时不应中断构建
+            print(f"  [warn] 读盟约激活人数失败，用内置常量：{exc}")
+    return act
 
 
 def parse_stack_cell(cell: str, tier: int) -> list[dict]:
@@ -189,7 +224,7 @@ def load_stacks() -> dict[str, list[dict]]:
 
 
 def load_prev_payload(html_text: str) -> dict:
-    """取回当前 HTML 里已内嵌的数据，用于 csv 快照缺失时兜底（cid / bondNames / stacks）。"""
+    """取回当前 HTML 里已内嵌的数据，用于 csv 快照缺失时兜底（cid / bondNames / stacks / avatars）。"""
     try:
         s = html_text.index(DATA_START) + len(DATA_START)
         e = html_text.index(DATA_END)
@@ -202,14 +237,26 @@ def load_prev_payload(html_text: str) -> dict:
     return prev if isinstance(prev, dict) else {}
 
 
+def load_avatars() -> dict[str, str]:
+    """读 tools/fetch_avatars.py 产出的 base64 缓存；缺失时返回空 dict（由上一版数据兜底）。"""
+    if not AVATAR_CACHE.exists():
+        return {}
+    try:
+        data = json.loads(AVATAR_CACHE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def main() -> int:
     csv_map = load_csv()
     cross_map = load_cross()
-    cids, bond_names = load_skland_meta()
+    cids, bond_names, bond_act = load_skland_meta()
     stacks = load_stacks()
+    avatars = load_avatars()
 
     # 兜底：lineup/ 快照在分支上、主分支重建时读不到，就沿用上一版内嵌数据
-    if not (cids and bond_names and stacks):
+    if not (cids and bond_names and stacks and avatars):
         prev = load_prev_payload((ROOT / "干员卡池.html").read_text(encoding="utf-8"))
         if not cids:
             for rec in prev.get("operators") or []:
@@ -219,6 +266,12 @@ def main() -> int:
             bond_names = dict(prev.get("bondNames") or {})
         if not stacks:
             stacks = dict(prev.get("stacks") or {})
+        if not avatars:
+            avatars = dict(prev.get("avatars") or {})
+        if not bond_act:
+            bond_act = dict(prev.get("bondAct") or {})
+    if not bond_act:
+        bond_act = dict(BOND_ACT_FALLBACK)
 
     problems: list[str] = []
     only_csv = sorted(set(csv_map) - set(cross_map))
@@ -282,7 +335,9 @@ def main() -> int:
         "subBannable": SUB_BANNABLE,
         "subFree": SUB_FREE,
         "bondNames": bond_names,
+        "bondAct": bond_act,
         "stacks": stacks,
+        "avatars": avatars,
         "operators": records,
     }
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -318,7 +373,11 @@ def main() -> int:
           + " ".join(f"{TIER_ROMAN[t]}:{n}" for t, n in sorted(by_tier.items())))
     print(f"  加层表：{len(stacks)} 个盟约 / {stack_total} 条 | charId 缺失 {len(no_cid)}"
           + (f"（{no_cid[:6]}）" if no_cid else "")
-          + f" | 盟约 ID 映射 {len(bond_names)} 条")
+          + f" | 盟约 ID 映射 {len(bond_names)} 条 | 激活人数 {len(bond_act)} 条")
+    no_av = [r["name"] for r in records if not avatars.get(r["name"])]
+    print(f"  头像：{len(records) - len(no_av)}/{len(records)} 张 | base64 合计 "
+          f"{sum(len(v) for v in avatars.values()) / 1024:.0f} KB"
+          + (f" | 缺头像 {len(no_av)}（{no_av[:6]}）" if no_av else ""))
     return 0
 
 
