@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.9.0">
+<meta name="version" content="v1.9.1">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -523,12 +523,15 @@
     object-fit:cover;background:#eef2f7;margin-right:5px;border:1px solid #e2e8f0;
   }
   .op-av.lg{width:38px;height:38px;border-radius:9px;vertical-align:-14px;margin-right:7px}
+  /* 卡池网格里用的小号头像：比文字略高，尽量不撑宽表格 */
+  .op-av.sm{width:20px;height:20px;border-radius:5px;vertical-align:-5px;margin-right:4px;border-color:#e6ecf4}
   .av-fallback{
     display:inline-flex;align-items:center;justify-content:center;vertical-align:-7px;
     width:26px;height:26px;border-radius:7px;background:#eaf1f8;color:#4a667f;
     font-size:12px;font-weight:700;margin-right:5px;border:1px solid #dbe6f2;
   }
   .av-fallback.lg{width:38px;height:38px;border-radius:9px;font-size:15px;vertical-align:-14px;margin-right:7px}
+  .av-fallback.sm{width:20px;height:20px;border-radius:5px;font-size:10.5px;vertical-align:-5px;margin-right:4px}
   .with-av{display:inline-flex;align-items:center;white-space:nowrap}
 
   /* ---------- 五阵容推荐 ---------- */
@@ -728,7 +731,7 @@
     <div class="help-pane" id="helpModal" hidden>
   <div class="modal-card help-card">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.0</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.1</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -810,7 +813,7 @@
           为什么被禁的也要留：<b>禁令只影响首次选词条，后续回合仍可能叠到它</b>；真正的分界是<b>卡池里带该盟约的干员够不够激活门槛</b>（核心 3 人；副盟约多为 2 人，投资人 3 人，调和 / 独行 1 人）。够 → 仍可能激活，加层要慎重；不够 → 本局基本不会激活，加层卡就没意义了。</li>
           <li><b>社区阵容</b>：别人已经打过的阵容列表，只保留<b>每张卡你本局都出得了</b>的，按赞数排序。点「<b>查询可复现阵容</b>」一次读 <b>500 篇</b>；右上角在有更多结果时变成「显示更多」，否则是「再拉一批」（每次 +200 篇）。</li>
           <li>浮窗里点「换一批」轮换推荐的 3 张加层卡。</li>
-          <li>本页所有干员名都<b>带头像</b>（44px，来自 PRTS 头像，已内嵌进文件，离线也能显示）。卡池分区的表格为了紧凑不加头像。</li>
+          <li>本页所有干员名都<b>带头像</b>（44px，来自 PRTS 头像，已内嵌进文件，离线也能显示）。卡池分区的表格用的是 <b>20px 小头像</b>，不影响横向排布。</li>
           <li>需要先用满 5+5 选好禁用，才会启用查询 —— 判定依据就是本局卡池。</li>
         </ul>
         <p class="help-note">这是页面上<b>唯一会联网</b>的功能（直连森空岛 <code>zonai.skland.com</code> 的公开接口，不需要登录）；头像、表格与计算全部在本地完成。如果你的网络或浏览器拦截了该请求，页面会提示失败原因，其它功能不受影响。</p>
@@ -829,7 +832,7 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具是单文件页面，表格与计算都在本地完成、不上传任何数据；<b>唯一会联网</b>的是「社区阵容」读取森空岛公开攻略列表，以及点击来源链接时的 prts.wiki。</li>
-          <li>工具版本 <b id="verMeta">v1.9.0</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.9.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -920,22 +923,23 @@
   /* ========== 头像 ========== */
   var AVATARS = D.avatars || {};
 
-  function avatarEl(name, big) {
+  function avatarEl(name, size) {
+    var cls = size === "lg" ? " lg" : (size === "sm" ? " sm" : "");
     var src = AVATARS[name];
     if (src) {
       var im = document.createElement("img");
-      im.className = "op-av" + (big ? " lg" : "");
+      im.className = "op-av" + cls;
       im.src = src;
       im.alt = "";
       im.decoding = "async";
       return im;
     }
-    return el("span", "av-fallback" + (big ? " lg" : ""), (name || "?").charAt(0));
+    return el("span", "av-fallback" + cls, (name || "?").charAt(0));
   }
   /* 头像 + 任意内容并排，行内不断行 */
-  function withAvatar(name, big, inner) {
+  function withAvatar(name, size, inner) {
     var wrap = el("span", "with-av");
-    wrap.appendChild(avatarEl(name, big));
+    wrap.appendChild(avatarEl(name, size));
     if (inner) wrap.appendChild(inner);
     return wrap;
   }
@@ -1273,6 +1277,7 @@
     wrap.title = op.name + " · " + op.type;
 
     var others = othersOf(op, colKey);
+    wrap.appendChild(avatarEl(op.name, "sm"));
     wrap.appendChild(el("span", "op-name", op.name));
     if (others.length) {
       wrap.appendChild(el("span", "op-other", "（" + others.join("、") + "）"));
@@ -1417,7 +1422,9 @@
     rows.forEach(function (op) {
       var tr = el("tr");
 
-      var nameCell = el("td", "name" + (op.type === "持续叠加" ? " is-stacked" : ""), op.name);
+      var nameCell = el("td", "name" + (op.type === "持续叠加" ? " is-stacked" : ""));
+      nameCell.appendChild(avatarEl(op.name, "sm"));
+      nameCell.appendChild(el("span", "op-name", op.name));
       nameCell.title = "点击查看详情";
       nameCell.addEventListener("click", function () { openModal(op.name); });
       tr.appendChild(nameCell);
@@ -1917,7 +1924,7 @@
     var c = el("div", "stack-card" + (r.ok ? "" : " off"));
     var nm = el("div", "nm");
     var box = el("span", "with-av");
-    box.appendChild(avatarEl(r.n, true));
+    box.appendChild(avatarEl(r.n, "lg"));
     box.appendChild(el("span", "", r.n));
     nm.appendChild(box);
     nm.appendChild(el("span", "tier-chip t" + r.t, tierLabel(r.t)));
@@ -2035,6 +2042,7 @@
 
     var title = $("modalTitle");
     title.textContent = "";
+    title.appendChild(avatarEl(op.name, "lg"));
     title.appendChild(el("h3", "", op.name));
     title.appendChild(el("span", "tier-chip t" + op.tier, tierLabel(op.tier)));
     var bd = el("span", "badge" + (op.type === "持续叠加" ? " stacked" : ""), op.type);
@@ -2126,7 +2134,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.9.0";
+  var APP_VER = "v1.9.1";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
