@@ -15,6 +15,7 @@ from __future__ import annotations
 import csv
 import datetime
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -23,6 +24,8 @@ import openpyxl
 ROOT = Path(__file__).resolve().parent.parent
 CSV_PATH = ROOT / "卫戍协议_干员数据库.csv"
 XLSX_PATH = ROOT / "卫戍协议_盟约交叉表.xlsx"
+LAYERS_XLSX = ROOT / "卫戍协议_盟约层数表.xlsx"
+SKLAND_DIR = ROOT / "lineup" / "data" / "skland"
 HTML_PATH = ROOT / "干员卡池.html"
 INDEX_PATH = ROOT / "index.html"
 
@@ -84,9 +87,112 @@ def load_cross() -> dict[str, dict]:
     return out
 
 
+def load_skland_meta() -> tuple[dict[str, str], dict[str, str]]:
+    """从 lineup/data/skland/ 快照读 charId 与盟约 ID→中文名映射（可选输入）。"""
+    cids: dict[str, str] = {}
+    bond_names: dict[str, str] = {}
+    ops_csv = SKLAND_DIR / "干员.csv"
+    if ops_csv.exists():
+        with ops_csv.open("r", encoding="utf-8-sig", newline="") as fh:
+            for r in csv.DictReader(fh):
+                name = (r.get("干员") or "").strip()
+                cid = (r.get("charId") or "").strip()
+                if name and cid:
+                    cids[name] = cid
+    bonds_csv = SKLAND_DIR / "盟约.csv"
+    if bonds_csv.exists():
+        with bonds_csv.open("r", encoding="utf-8-sig", newline="") as fh:
+            rd = csv.DictReader(fh)
+            keys = rd.fieldnames or []
+            id_key = keys[0] if keys else ""
+            name_key = "名称" if "名称" in keys else (keys[1] if len(keys) > 1 else "")
+            for r in rd:
+                bid = (r.get(id_key) or "").strip()
+                nm = (r.get(name_key) or "").strip()
+                if bid and nm:
+                    bond_names[bid] = nm
+    return cids, bond_names
+
+
+def parse_stack_cell(cell: str, tier: int) -> list[dict]:
+    """解析「干员<触发时机>+N/条件（每回合至多M）」形式的一格（可含多行多卡）。"""
+    out = []
+    for raw_line in cell.replace("\r", "").split("\n"):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if "<" in line and ">" in line:
+            name, _, tail = line.partition("<")
+            trigger, _, rest = tail.partition(">")
+            name, trigger, rest = name.strip(), trigger.strip(), rest.strip()
+        else:
+            m = re.match(r"^([^+＋（(]+?)\s*(.*)$", line)
+            if not m:
+                continue
+            name, trigger, rest = m.group(1).strip(), "", m.group(2).strip()
+        if not name:
+            continue
+        gain = re.search(r"\+\s*(\d+)", rest)
+        cap = re.search(r"(每回合|每场)至多\s*(\d+)", rest)
+        out.append({
+            "n": name,
+            "t": tier,
+            "g": int(gain.group(1)) if gain else 0,
+            "c": int(cap.group(2)) if cap else 0,
+            "p": cap.group(1) if cap else "",
+            "tr": trigger,
+            "r": line,
+        })
+    return out
+
+
+def load_stacks() -> dict[str, list[dict]]:
+    """读「主盟约层数增加」「附加盟约层数增加」两张表，得到 盟约 → 加层卡清单。"""
+    if not LAYERS_XLSX.exists():
+        return {}
+    wb = openpyxl.load_workbook(LAYERS_XLSX, data_only=True)
+    stacks: dict[str, list[dict]] = {}
+    for sheet_name in ("主盟约层数增加", "附加盟约层数增加"):
+        if sheet_name not in wb.sheetnames:
+            continue
+        ws = wb[sheet_name]
+        header_row = None
+        for r in range(1, min(ws.max_row, 15) + 1):
+            v = ws.cell(r, 1).value
+            if isinstance(v, str) and v.strip().startswith("阶数") and "配色" not in v:
+                header_row = r
+                break
+        if header_row is None:
+            continue
+        cols: dict[int, str] = {}
+        for c in range(2, ws.max_column + 1):
+            v = ws.cell(header_row, c).value
+            if isinstance(v, str) and v.strip() and "条目数" not in v:
+                cols[c] = v.strip()
+        for r in range(header_row + 1, ws.max_row + 1):
+            tv = ws.cell(r, 1).value
+            if not isinstance(tv, str):
+                continue
+            tv = tv.strip()
+            if not tv.endswith("阶"):
+                continue
+            roman = tv[:-1].strip()
+            if roman not in TIER_ROMAN.values():
+                continue
+            tier = next(k for k, v in TIER_ROMAN.items() if v == roman)
+            for c, cov in cols.items():
+                cell = ws.cell(r, c).value
+                if not isinstance(cell, str) or not cell.strip():
+                    continue
+                stacks.setdefault(cov, []).extend(parse_stack_cell(cell, tier))
+    return stacks
+
+
 def main() -> int:
     csv_map = load_csv()
     cross_map = load_cross()
+    cids, bond_names = load_skland_meta()
+    stacks = load_stacks()
 
     problems: list[str] = []
     only_csv = sorted(set(csv_map) - set(cross_map))
@@ -132,6 +238,7 @@ def main() -> int:
             "base": src["base"],
             "elite": src["elite"],
             "proto": src["proto"],
+            "cid": cids.get(name, ""),
         })
 
     if problems:
@@ -148,6 +255,8 @@ def main() -> int:
         "subAll": SUB_ALL,
         "subBannable": SUB_BANNABLE,
         "subFree": SUB_FREE,
+        "bondNames": bond_names,
+        "stacks": stacks,
         "operators": records,
     }
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -177,8 +286,13 @@ def main() -> int:
     for r in records:
         by_tier[r["tier"]] = by_tier.get(r["tier"], 0) + 1
     stacked = sum(1 for r in records if r["type"] == "持续叠加")
+    no_cid = [r["name"] for r in records if not r["cid"]]
+    stack_total = sum(len(v) for v in stacks.values())
     print(f"注入完成：{len(records)} 名干员 | 持续叠加 {stacked} | 分阶 "
           + " ".join(f"{TIER_ROMAN[t]}:{n}" for t, n in sorted(by_tier.items())))
+    print(f"  加层表：{len(stacks)} 个盟约 / {stack_total} 条 | charId 缺失 {len(no_cid)}"
+          + (f"（{no_cid[:6]}）" if no_cid else "")
+          + f" | 盟约 ID 映射 {len(bond_names)} 条")
     return 0
 
 
