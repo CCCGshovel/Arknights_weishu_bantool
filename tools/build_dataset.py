@@ -188,11 +188,37 @@ def load_stacks() -> dict[str, list[dict]]:
     return stacks
 
 
+def load_prev_payload(html_text: str) -> dict:
+    """取回当前 HTML 里已内嵌的数据，用于 csv 快照缺失时兜底（cid / bondNames / stacks）。"""
+    try:
+        s = html_text.index(DATA_START) + len(DATA_START)
+        e = html_text.index(DATA_END)
+        seg = html_text[s:e]
+        seg = re.sub(r"^\s*<script[^>]*>", "", seg)
+        seg = re.sub(r"</script>\s*$", "", seg)
+        prev = json.loads(seg)
+    except (ValueError, json.JSONDecodeError):
+        return {}
+    return prev if isinstance(prev, dict) else {}
+
+
 def main() -> int:
     csv_map = load_csv()
     cross_map = load_cross()
     cids, bond_names = load_skland_meta()
     stacks = load_stacks()
+
+    # 兜底：lineup/ 快照在分支上、主分支重建时读不到，就沿用上一版内嵌数据
+    if not (cids and bond_names and stacks):
+        prev = load_prev_payload((ROOT / "干员卡池.html").read_text(encoding="utf-8"))
+        if not cids:
+            for rec in prev.get("operators") or []:
+                if rec.get("cid"):
+                    cids[rec["name"]] = rec["cid"]
+        if not bond_names:
+            bond_names = dict(prev.get("bondNames") or {})
+        if not stacks:
+            stacks = dict(prev.get("stacks") or {})
 
     problems: list[str] = []
     only_csv = sorted(set(csv_map) - set(cross_map))
