@@ -1576,7 +1576,9 @@
       r.op = BY_NAME[r.n] || null;
     });
     arr.sort(function (x, y) {
-      return ((y.ok ? 1 : 0) - (x.ok ? 1 : 0)) || (y.c - x.c) || (y.g - x.g) || (x.t - y.t);
+      /* 表里没写「每回合至多」的，说明不设限，排序时按最宽松算 */
+      var capX = x.c > 0 ? x.c : 999, capY = y.c > 0 ? y.c : 999;
+      return ((y.ok ? 1 : 0) - (x.ok ? 1 : 0)) || (capY - capX) || (y.g - x.g) || (x.t - y.t);
     });
     return arr;
   }
@@ -1615,11 +1617,12 @@
     var tb = el("tbody");
     rows.forEach(function (r) {
       var tr = el("tr", r.ok ? "" : "off");
+      if (r.r) tr.title = r.r;   /* 悬停看原始文案，含「由临时层数转化」这类补充说明 */
       tr.appendChild(el("td", "n", r.n));
       tr.appendChild(el("td", "", tierLabel(r.t)));
       tr.appendChild(el("td", "", r.g ? "+" + r.g : "按售价"));
       tr.appendChild(el("td", "", r.tr || "—"));
-      tr.appendChild(el("td", "", r.c ? (r.p || "每回合") + "至多 " + r.c : "—"));
+      tr.appendChild(el("td", "", r.c ? (r.p || "每回合") + "至多 " + r.c : "不限"));
       tr.appendChild(el("td", "", r.op ? r.op.type : "—"));
       tr.appendChild(el("td", "", r.ok ? "可用" : "不可用"));
       tb.appendChild(tr);
