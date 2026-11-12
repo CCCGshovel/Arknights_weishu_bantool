@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.9.1">
+<meta name="version" content="v1.9.2">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -699,6 +699,7 @@
   </div>
 
   <div class="pane" id="paneCm" hidden>
+
     <article class="panel" id="fivePanel">
       <div class="table-head">
         <h2 class="title">五阵容推荐 · 每个未禁主盟约各一套<small id="fiveSub">从「阵容里每张卡本局都出得了」的社区攻略里，按赞数给每个未禁主盟约挑一套</small></h2>
@@ -713,7 +714,7 @@
       <div class="cov-strip" id="covStrip"></div>
     </article>
 
-<article class="panel cm-panel" style="margin-top:16px">
+<article class="panel cm-panel" id="cmPanel" style="margin-top:16px">
       <div class="table-head">
         <h2 class="title">社区阵容<small id="cmSub">只保留「阵容里每张卡本局都出得了」的官方社区攻略</small></h2>
         <div class="legend">
@@ -727,11 +728,17 @@
     </article>
   </div>
 
+</section>
+  <article class="panel cm-gate" id="cmGate" hidden>
+    <p class="cm-hint">这里需要先选满 5 个主盟约与 5 个副盟约、点「生成表格」之后才会出内容 —— 因为判断「这套阵容你本局能不能复现」靠的就是本局卡池。</p>
+    <p class="cm-hint">想先看用法，点顶部「<b>说明</b>」随时都能打开。</p>
+  </article>
+
   <div class="pane" id="paneHelp" hidden>
     <div class="help-pane" id="helpModal" hidden>
   <div class="modal-card help-card">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.1</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.2</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -746,7 +753,7 @@
         <ul>
           <li><b>卡池</b>：禁用栏 + 概览 + 表1~表5，也就是本工具的主体。</li>
           <li><b>阵容推荐</b>：五阵容推荐表、全部盟约叠层卡入口、森空岛社区阵容列表。这里的干员名都<b>带头像</b>，方便一眼认人。</li>
-          <li><b>说明</b>：就是当前这一页。随时可点右上角「说明」，或上面这个分区按钮。</li>
+          <li><b>说明</b>：就是当前这一页。三个分区之间随时切换，不需要先选完禁用。</li>
           <li>顶部禁用栏在三个分区里共用：无论你在哪一页，改禁制都会同步刷新。</li>
         </ul>
       </section>
@@ -832,20 +839,20 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具是单文件页面，表格与计算都在本地完成、不上传任何数据；<b>唯一会联网</b>的是「社区阵容」读取森空岛公开攻略列表，以及点击来源链接时的 prts.wiki。</li>
-          <li>工具版本 <b id="verMeta">v1.9.1</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.9.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
       <div class="help-foot">
         <button class="btn primary" id="helpGotIt" type="button">知道了，开始使用</button>
-        <span class="help-tip">随时可点右上角「说明」重新打开</span>
+        <span class="help-tip">想再看时，点顶部的「说明」分区即可</span>
       </div>
 
     </div>
   </div>
 </div>
   </div>
-</section>
+
 </main>
 
 <p class="footer-note">
@@ -953,6 +960,20 @@
     return k === "cm" ? "paneCm" : (k === "help" ? "paneHelp" : "panePool");
   }
 
+  /* 结果区（卡池 / 阵容推荐两个分区的共同容器）是否显示：
+     既要求表格已生成，也要求当前不在「说明」分区 */
+  function syncResultsVisibility() {
+    var built = !!state.built;
+    var res = $("results");
+    if (res) res.hidden = (tab === "help") || !built;
+    var pool = $("panePool");
+    if (pool) pool.hidden = (tab !== "pool");
+    var cm = $("paneCm");
+    if (cm) cm.hidden = (tab !== "cm");
+    var gate = $("cmGate");
+    if (gate) gate.hidden = !(tab === "cm" && !built);
+  }
+
   function setTab(k) {
     if (TAB_KEYS.indexOf(k) < 0) k = "pool";
     tab = k;
@@ -970,6 +991,7 @@
       }
     }
     if (k === "help" && helpModal) helpModal.hidden = false;
+    syncResultsVisibility();
     try { localStorage.setItem(TAB_KEY, k); } catch (e) { /* 忽略 */ }
   }
 
@@ -1211,9 +1233,9 @@
     if (state.built && !ready) state.built = false;
     if (state.built && ready) {
       renderResults();
-      $("results").hidden = false;
+      syncResultsVisibility();
     } else {
-      $("results").hidden = true;
+      syncResultsVisibility();
       cmRefresh();   /* 结果区收起时，社区阵容的盟约胶囊也要跟着收起 */
     }
   }
@@ -2134,7 +2156,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.9.1";
+  var APP_VER = "v1.9.2";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
