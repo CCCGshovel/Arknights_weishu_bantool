@@ -46,6 +46,13 @@ TIER_ROMAN = {1: "Ⅰ", 2: "Ⅱ", 3: "Ⅲ", 4: "Ⅳ", 5: "Ⅴ", 6: "Ⅵ"}
 
 # 盟约激活所需人数（官方「S.W.E.E.P.盟约报告」口径）：
 # 核心盟约一律 3 人；副盟约多为 2 人，投资人为 3 人，调和 / 独行为 1 人。
+# 终端输出卡：默认取「特质类型 = 作战能力」，再用下面两份名单手工补 / 删。
+# 背景：作战能力类基本都是技能爆发型终端（玛恩纳 / 艾雅法拉 / 贝洛内 / 锏 …），
+# 但少数持续叠加型才是真正的输出核心（塔露拉、逻各斯），靠标签抓不到，只能点名补。
+TERMINAL_TYPE = "作战能力"
+TERMINAL_EXTRA = ["塔露拉", "逻各斯"]
+TERMINAL_DROP = []
+
 BOND_ACT_FALLBACK = {
     "炎": 3, "萨尔贡": 3, "维多利亚": 3, "谢拉格": 3, "阿戈尔": 3,
     "叙拉古": 3, "卡西米尔": 3, "乌萨斯": 3, "伊比利亚": 3, "莱塔尼亚": 3,
@@ -326,6 +333,12 @@ def main() -> int:
             print("  -", p, file=sys.stderr)
         return 1
 
+    terminal = [r["name"] for r in records if r["type"] == TERMINAL_TYPE]
+    for nm in TERMINAL_EXTRA:
+        if nm in {r["name"] for r in records} and nm not in terminal:
+            terminal.append(nm)
+    terminal = [n for n in terminal if n not in TERMINAL_DROP]
+
     payload = {
         "built": datetime.date.today().isoformat(),
         "count": len(records),
@@ -338,6 +351,7 @@ def main() -> int:
         "bondAct": bond_act,
         "stacks": stacks,
         "avatars": avatars,
+        "terminal": terminal,
         "operators": records,
     }
     blob = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -378,6 +392,8 @@ def main() -> int:
     print(f"  头像：{len(records) - len(no_av)}/{len(records)} 张 | base64 合计 "
           f"{sum(len(v) for v in avatars.values()) / 1024:.0f} KB"
           + (f" | 缺头像 {len(no_av)}（{no_av[:6]}）" if no_av else ""))
+    print(f"  终端输出卡（{TERMINAL_TYPE} + 补 {len(TERMINAL_EXTRA)} - 删 {len(TERMINAL_DROP)}）："
+          f"{len(terminal)} 张 | 补入 {TERMINAL_EXTRA}")
     return 0
 
 
