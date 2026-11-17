@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.9.2">
+<meta name="version" content="v1.9.3">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -167,8 +167,16 @@
   .stat b{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
   .stat.hi b{color:var(--star)}
   .overview .divider{width:1px;height:14px;background:var(--line);align-self:center}
-  .banlist{color:var(--muted)}
-  .banlist em{font-style:normal;color:var(--danger);font-weight:600}
+  .ov-stacks{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .ov-stacks .ov-lead{font-style:normal;color:var(--muted);margin-right:2px}
+  .ov-chip{
+    display:inline-flex;align-items:center;gap:4px;padding:1px 9px;border-radius:999px;
+    font-size:12px;cursor:pointer;border:1px solid #d7e4f0;background:#eaf1f8;color:#3c5a78;
+  }
+  .ov-chip:hover{background:#ddeaf7}
+  .ov-chip.core{background:#e8f3ec;color:#2f6b46;border-color:#cfe4d6}
+  .ov-chip.core:hover{background:#dcefe3}
+  .ov-chip .ban-tag.cool{font-size:9.5px;line-height:1.5;padding:0 3px;margin-left:2px}
 
   /* ---------- 表格 ---------- */
   .table-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:10px;flex-wrap:wrap}
@@ -738,7 +746,7 @@
     <div class="help-pane" id="helpModal" hidden>
   <div class="modal-card help-card">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.2</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.3</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
@@ -751,7 +759,7 @@
       <section class="help-sec">
         <h4>页面分成三个分区</h4>
         <ul>
-          <li><b>卡池</b>：禁用栏 + 概览 + 表1~表5，也就是本工具的主体。</li>
+          <li><b>卡池</b>：禁用栏 + 概览 + 表1~表5，也就是本工具的主体。概览里「可用干员 / 持续叠加」右边那排<b>被禁盟约叠层卡</b>按钮，点任意一个就能看这个盟约本局还有谁能给它加层（和「阵容推荐」页点胶囊是同一个浮窗）。</li>
           <li><b>阵容推荐</b>：五阵容推荐表、全部盟约叠层卡入口、森空岛社区阵容列表。这里的干员名都<b>带头像</b>，方便一眼认人。</li>
           <li><b>说明</b>：就是当前这一页。三个分区之间随时切换，不需要先选完禁用。</li>
           <li>顶部禁用栏在三个分区里共用：无论你在哪一页，改禁制都会同步刷新。</li>
@@ -839,7 +847,7 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具是单文件页面，表格与计算都在本地完成、不上传任何数据；<b>唯一会联网</b>的是「社区阵容」读取森空岛公开攻略列表，以及点击来源链接时的 prts.wiki。</li>
-          <li>工具版本 <b id="verMeta">v1.9.2</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.9.3</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -1264,26 +1272,24 @@
     box.appendChild(statBlock("持续叠加", stacked, true));
     box.appendChild(el("span", "divider"));
 
-    var ban = el("span", "banlist");
-    ban.appendChild(document.createTextNode("已禁 主："));
-    if (state.bannedCore.length === 0) {
-      ban.appendChild(document.createTextNode("无"));
-    } else {
-      state.bannedCore.forEach(function (c, i) {
-        if (i) ban.appendChild(document.createTextNode("、"));
-        ban.appendChild(el("em", "", c));
-      });
-    }
-    ban.appendChild(document.createTextNode("　副："));
-    if (state.bannedSub.length === 0) {
-      ban.appendChild(document.createTextNode("无"));
-    } else {
-      state.bannedSub.forEach(function (c, i) {
-        if (i) ban.appendChild(document.createTextNode("、"));
-        ban.appendChild(el("em", "", c));
-      });
-    }
-    box.appendChild(ban);
+    /* 被禁盟约的叠层卡入口：与「阵容推荐」页点胶囊看的是同一个浮窗 */
+    var ov = el("span", "ov-stacks");
+    ov.appendChild(el("em", "ov-lead", "被禁盟约叠层卡"));
+    addOvChips(ov, state.bannedCore, "core", "主");
+    addOvChips(ov, state.bannedSub, "sub", "副");
+    box.appendChild(ov);
+  }
+
+  /* 概览里的盟约按钮：主盟约绿底、副盟约蓝底，点开该盟约的叠层卡浮窗 */
+  function addOvChips(host, list, cls, tag) {
+    (list || []).forEach(function (nm) {
+      var chip = el("button", "ov-chip " + cls, nm);
+      chip.type = "button";
+      chip.title = "「" + nm + "」" + covBanNote(nm) + "；点开看本局还有谁能给它加层";
+      chip.appendChild(el("span", "ban-tag cool", tag));
+      chip.addEventListener("click", function () { openStack(nm); });
+      host.appendChild(chip);
+    });
   }
 
   function statBlock(label, value, hi) {
@@ -2156,7 +2162,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.9.2";
+  var APP_VER = "v1.9.3";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
