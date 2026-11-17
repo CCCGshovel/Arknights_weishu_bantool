@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>卫戍协议 · 干员卡池筛选</title>
 <meta name="author" content="铲铲铲铲哥">
-<meta name="version" content="v1.9.3">
+<meta name="version" content="v1.9.4">
 <meta name="description" content="按每局禁用的盟约词条筛选卫戍协议可用干员，按主/副盟约与阶数列出，并突出显示特质类型为持续叠加的干员。">
 <style>
   :root{
@@ -267,6 +267,8 @@
   table.detail td.name{font-weight:800;white-space:nowrap;cursor:pointer;color:var(--ink)}
   table.detail td.name:hover{color:var(--accent);text-decoration:underline}
   table.detail td.name.is-stacked::after{content:"★";margin-left:3px;color:var(--star)}
+  table.detail td.name.is-terminator{color:#a63d2e}
+  table.detail td.name.is-terminator .term-mark{margin-left:3px}
   table.detail td.tier{white-space:nowrap;font-weight:800}
   table.detail td.t1{color:var(--t1)} table.detail td.t2{color:var(--t2)}
   table.detail td.t3{color:var(--t3)} table.detail td.t4{color:var(--t4)}
@@ -557,8 +559,11 @@
   .five-core{font:inherit;font-weight:700;color:#2f6b46;background:none;border:0;border-bottom:1px dashed #9dc2ad;padding:0 0 1px;cursor:pointer}
   .five-core:hover{color:#1f5233;border-bottom-color:#2f6b46}
   .five-core .hint{font-weight:400;color:#8aa79a;font-size:11.5px;margin-left:4px}
-  /* 终端输出卡：赭红加粗（替代原来的持续叠加星标） */
+  /* 终端输出卡：赭红加粗 + ◆ 标记（★ 留给持续叠加，两者可同时出现） */
   .op.is-terminator{color:#a63d2e;font-weight:800}
+  .op.is-terminator .op-other{color:#ab8177}
+  .term-mark{margin-left:2px;color:#a63d2e;font-weight:900;font-size:11px}
+  .op:hover .term-mark{color:#ffd9cc}
 
   /* ---------- 全部盟约 · 极简入口行 ---------- */
   .cov-strip{display:flex;flex-wrap:wrap;align-items:center;gap:0;padding-top:2px}
@@ -646,6 +651,7 @@
         <h2 class="title">表1 · 主盟约 × 阶数<small>格内为可用干员，括号中是该干员除本列盟约外的其余盟约</small></h2>
         <div class="legend">
           <span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span>
+          <span class="k"><b style="color:#a63d2e">红字 + ◆</b> ＝ 终端输出</span>
           <span class="k">行底色 ＝ 阶数（Ⅰ→Ⅵ 与交叉表同色）</span>
         </div>
       </div>
@@ -662,6 +668,7 @@
           </div>
           <div class="legend">
             <span class="k"><b>加粗 + ★</b> ＝ 持续叠加</span>
+            <span class="k"><b style="color:#a63d2e">红字 + ◆</b> ＝ 终端输出</span>
             <span class="k">行底色 ＝ 阶数（Ⅰ→Ⅵ 与交叉表同色）</span>
           </div>
         </div>
@@ -699,6 +706,7 @@
         <h2 class="title">表5 · 特质详情<small>仅列当前可用干员；点击干员名可查看详情</small></h2>
         <div class="legend">
           <span class="k"><b>★</b> ＝ 持续叠加</span>
+          <span class="k"><b style="color:#a63d2e">红字 + ◆</b> ＝ 终端输出</span>
           <span class="k t5-tip" id="t5Tip">已折叠 · 点此展开 ▾</span>
         </div>
       </div>
@@ -746,14 +754,14 @@
     <div class="help-pane" id="helpModal" hidden>
   <div class="modal-card help-card">
     <div class="modal-head">
-      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.3</span></div>
+      <div class="modal-title"><h3 id="helpTitle">使用说明</h3><span class="ver-chip" id="verChip">v1.9.4</span></div>
       <button class="modal-close" id="helpClose" type="button" aria-label="关闭">×</button>
     </div>
     <div class="modal-body help-body">
 
       <p class="help-lead">
         按每局被禁用的盟约词条，筛出本局还能出的干员，并按<b>主盟约 / 副盟约 × 阶数</b>排成表。
-        特质类型为<b>持续叠加</b>的干员会加粗并在名后标 <b>★</b>，方便一眼挑出。
+        特质类型为<b>持续叠加</b>的干员会加粗并在名后标 <b>★</b>；被标为<b>终端输出</b>的核心输出卡则是<b>赭红加粗 + ◆</b>，方便一眼挑出。
       </p>
 
       <section class="help-sec">
@@ -795,11 +803,17 @@
           <span class="help-arrow">→</span>
           <span class="help-demo-txt">「野鬃」，除本列盟约外还带 <b>助力</b>，特质类型为 <b>持续叠加</b></span>
         </div>
+        <div class="help-demo">
+          <span class="op is-terminator"><span class="op-name">玛恩纳</span><span class="op-other">（卡西米尔）</span><span class="term-mark">◆</span></span>
+          <span class="help-arrow">→</span>
+          <span class="help-demo-txt">「玛恩纳」<b>赭红加粗 + ◆</b>，是被标为<b>终端输出</b>的核心输出卡</span>
+        </div>
         <ul>
           <li><b>加粗 + ★</b> ＝ 特质类型为<b>持续叠加</b>；其余类型不加粗、也没有星标。</li>
+          <li><b>赭红加粗 + ◆</b> ＝ <b>终端输出卡</b>（共 20 张，名单在「阵容推荐」页也用同一套颜色）：前期靠持续叠加滚雪球，最终成型看的就是这些卡。两个标记可以同时出现，比如「塔露拉 ◆★」＝ 既是终端输出、又是持续叠加。</li>
           <li>括号里是这名干员<b>除本列盟约之外</b>的其余全部盟约（主盟约、副盟约都算）。若没有其它盟约，就不带括号。</li>
           <li>一格里有多个干员时，<b>每个干员单独占一行</b>，名字不会被拆到两行去。</li>
-          <li>表3、表4 的格子写法与表1、表2 <b>完全一样</b>，只是行底色换成暖调，提醒这些卡本局出不了。</li>
+          <li>表3、表4 的格子写法与表1、表2 <b>完全一样</b>，只是行底色换成暖调，提醒这些卡本局出不了；<b>这两张表里不标终端输出的红名</b>（免得和暖红底色打架）。</li>
         </ul>
       </section>
 
@@ -822,7 +836,7 @@
         <ul>
           <li><b>五阵容推荐</b>：<b>每个未禁主盟约各占一行</b>（本局禁了 5 个，所以正好 5 行）。每行从社区攻略里挑一篇「阵容里每张卡你本局都出得了」且<b>激活该主盟约</b>的最高赞攻略，列出干员（带头像）、赞/藏、以及这套阵容同时激活的副盟约。<br>
           首次填表时同一篇攻略不会在两行里重复；某行想换，点该行最右的 <b>换一套</b> 就在这个主盟约的可用攻略里轮换（轮换后可能与其它行同篇，这是允许的）。某个主盟约实在没有可用攻略，那一行会写「本局没有每张卡都出得了的社区攻略」，不会硬凑。</li>
-          <li><b>阵容里哪些名字是赭红色</b>：赭红加粗 = <b>终端输出卡</b>（技能期能打出成吨伤害的核心输出，如玛恩纳、塔露拉、艾雅法拉、贝洛内）。前期选持续叠加卡滚雪球，最终成型看的是这类卡，所以阵容里用颜色把它们挑出来。<b>卡池分区的表格里仍然是 ★ 标持续叠加</b>，两边各看各的重点。</li>
+          <li><b>哪些名字是赭红色</b>：赭红加粗 + <b>◆</b> = <b>终端输出卡</b>（技能期能打出成吨伤害的核心输出，如玛恩纳、塔露拉、艾雅法拉、贝洛内，共 20 张）。前期选持续叠加卡滚雪球，最终成型看的是这类卡，所以两边都用同一套颜色把它们挑出来：卡池的四张可用表（表1、表2）和特质详情表（表5）里也会标红，<b>表3、表4 这两张「出不了」的表不标</b>。</li>
           <li><b>点主盟约名字</b>（左列带虚线下划线的那个）就能看该盟约的叠层卡；<b>点阵容下方的副盟约胶囊</b>同样能看该副盟约的叠层卡，<b>被禁的胶囊照样能点</b>（会高亮成暖红并标「已禁」）。</li>
           <li><b>最上面那一行极简胶囊</b>是「全部盟约」的入口：主盟约 10 个 + 副盟约 15 个全在，被禁的带删除线但可点。点开看到的是「本局卡池里还有谁能给这个盟约加层」，并给出这个盟约在本局<b>能不能凑够激活人数</b>。<br>
           为什么被禁的也要留：<b>禁令只影响首次选词条，后续回合仍可能叠到它</b>；真正的分界是<b>卡池里带该盟约的干员够不够激活门槛</b>（核心 3 人；副盟约多为 2 人，投资人 3 人，调和 / 独行 1 人）。够 → 仍可能激活，加层要慎重；不够 → 本局基本不会激活，加层卡就没意义了。</li>
@@ -847,7 +861,7 @@
           <li>数据来源：<a class="help-link" href="https://prts.wiki/" target="_blank" rel="noopener noreferrer">PRTS 明日方舟中文维基（prts.wiki）</a>，干员信息据此整理为本地数据库与盟约交叉表。</li>
           <li>适用版本：对应本体 <b>2026.11.8</b> 更新的《卫戍协议：规程》；盟约、阶数与特质数据均取自该版本。</li>
           <li>数据版本：<b id="dataMeta">—</b>。本工具是单文件页面，表格与计算都在本地完成、不上传任何数据；<b>唯一会联网</b>的是「社区阵容」读取森空岛公开攻略列表，以及点击来源链接时的 prts.wiki。</li>
-          <li>工具版本 <b id="verMeta">v1.9.3</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
+          <li>工具版本 <b id="verMeta">v1.9.4</b> ｜ 作者 <b>铲铲铲铲哥</b>。</li>
         </ul>
       </section>
 
@@ -1300,9 +1314,10 @@
     return s;
   }
 
-  function opEntry(op, colKey) {
-    var wrap = el("span", "op" + (op.type === "持续叠加" ? " is-stacked" : ""));
-    wrap.title = op.name + " · " + op.type;
+  function opEntry(op, colKey, markTerm) {
+    var term = markTerm !== false && !!TERMINAL[op.name];
+    var wrap = el("span", "op" + (op.type === "持续叠加" ? " is-stacked" : "") + (term ? " is-terminator" : ""));
+    wrap.title = op.name + " · " + op.type + (term ? " · 终端输出" : "");
 
     var others = othersOf(op, colKey);
     wrap.appendChild(avatarEl(op.name, "sm"));
@@ -1310,6 +1325,7 @@
     if (others.length) {
       wrap.appendChild(el("span", "op-other", "（" + others.join("、") + "）"));
     }
+    if (term) wrap.appendChild(termMark());
     if (op.type === "持续叠加") {
       var st = el("span", "star", "★");
       st.title = "持续叠加";
@@ -1317,6 +1333,13 @@
     }
     wrap.addEventListener("click", function () { openModal(op.name); });
     return wrap;
+  }
+
+  /* 终端输出的符号标记（◆），与持续叠加的 ★ 并列使用 */
+  function termMark() {
+    var m = el("span", "term-mark", "◆");
+    m.title = "终端输出（红名）";
+    return m;
   }
 
   function makeGrid(columns, getOps, warm) {
@@ -1355,7 +1378,7 @@
           /* 一名干员单独一行，条目本身不换行 */
           list.forEach(function (op) {
             var line = el("div", "op-line");
-            line.appendChild(opEntry(op, col.key));
+            line.appendChild(opEntry(op, col.key, !warm));
             td.appendChild(line);
           });
         }
@@ -1450,10 +1473,12 @@
     rows.forEach(function (op) {
       var tr = el("tr");
 
-      var nameCell = el("td", "name" + (op.type === "持续叠加" ? " is-stacked" : ""));
+      var isTerm = !!TERMINAL[op.name];
+      var nameCell = el("td", "name" + (op.type === "持续叠加" ? " is-stacked" : "") + (isTerm ? " is-terminator" : ""));
       nameCell.appendChild(avatarEl(op.name, "sm"));
       nameCell.appendChild(el("span", "op-name", op.name));
-      nameCell.title = "点击查看详情";
+      if (isTerm) nameCell.appendChild(termMark());
+      nameCell.title = "点击查看详情" + (isTerm ? "（终端输出）" : "");
       nameCell.addEventListener("click", function () { openModal(op.name); });
       tr.appendChild(nameCell);
 
@@ -1753,8 +1778,9 @@
     var cards = el("div", "cm-cards");
     a.names.forEach(function (nm) {
       var term = nm && TERMINAL[nm];
-      cards.appendChild(withAvatar(nm, false,
-        el("span", "op" + (term ? " is-terminator" : ""), nm || "未知单位")));
+      var sp = el("span", "op" + (term ? " is-terminator" : ""), nm || "未知单位");
+      if (term) sp.appendChild(termMark());
+      cards.appendChild(withAvatar(nm, false, sp));
     });
     box.appendChild(cards);
 
@@ -1795,8 +1821,9 @@
 
   function fiveOp(nm) {
     var term = nm && TERMINAL[nm];
-    return withAvatar(nm, false,
-      el("span", "op" + (term ? " is-terminator" : ""), nm || "未知单位"));
+    var sp = el("span", "op" + (term ? " is-terminator" : ""), nm || "未知单位");
+    if (term) sp.appendChild(termMark());
+    return withAvatar(nm, false, sp);
   }
 
   function renderFive() {
@@ -2162,7 +2189,7 @@
   }
 
   /* 工具版本与作者（单处维护，改这里即可） */
-  var APP_VER = "v1.9.3";
+  var APP_VER = "v1.9.4";
   var APP_AUTHOR = "铲铲铲铲哥";
   /* 本工具对应的游戏本体与玩法版本 */
   var GAME_VER = "2026.11.8";
